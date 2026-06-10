@@ -1,0 +1,78 @@
+{
+  "phase": 3.6,
+  "title": "Delete, Undo, Reset UX Trust Gate",
+  "title_ko": "삭제/복구/초기화 UX 신뢰 게이트",
+  "description": "Phase 4 시작 전 오입력/실수입력 관점에서 주요 아이템 삭제, 복구, 더미 데이터 정리, 워크스페이스 초기화를 구현한다.",
+  "status": "completed",
+  "progress_summary": {
+    "total_tasks": 7,
+    "not_started": 0,
+    "in_progress": 0,
+    "completed": 7,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "priority": "Critical",
+  "dependencies": [
+    "Phase 0",
+    "Phase 1",
+    "Phase 2",
+    "Phase 3",
+    "Phase 3.5"
+  ],
+  "tasks": [
+    {
+      "id": "P3.6-T1",
+      "title": "Phase 3.6 계획 파일 및 진행 상태 생성",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T2",
+      "title": "MeetingNote/ProjectLink/Decision soft delete 필드와 migration 추가",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T3",
+      "title": "주요 엔티티 archive/delete/restore API 정비",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T4",
+      "title": "샘플 데이터 제거 및 워크스페이스 초기화 API 추가",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T5",
+      "title": "Inbox/Task/Project/MeetingNote/Link 삭제 및 복구 UI 추가",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T6",
+      "title": "Settings 데이터 관리 UI와 확인/Undo UX 추가",
+      "status": "completed"
+    },
+    {
+      "id": "P3.6-T7",
+      "title": "오입력 시뮬레이션 테스트와 브라우저 QA 수행",
+      "status": "completed"
+    }
+  ],
+  "completion_criteria": [
+    "Inbox item을 보관하면 기본 Dashboard/Inbox 목록에서 사라지고 Archived filter에서 복구할 수 있다.",
+    "Task를 보관하면 task list/kanban에서 사라지고 Archived filter 또는 detail에서 복구할 수 있다.",
+    "Project를 보관하면 기본 project list/sidebar에서 사라지고 Archived filter에서 복구할 수 있다.",
+    "Meeting note와 Project link 삭제는 복구 가능한 soft delete로 동작한다.",
+    "Settings에서 샘플 데이터 제거가 seed 패턴 데이터만 제거하고 사용자 생성 데이터는 유지한다.",
+    "Settings에서 워크스페이스 초기화는 RESET WORKSPACE 확인 없이 실행되지 않는다.",
+    "삭제/복구/초기화 액션은 audit log를 남긴다.",
+    "npm run lint, npm run test, npm run build가 통과한다.",
+    "브라우저 QA에서 삭제, 복구, 샘플 정리, 초기화 보호 시나리오가 통과한다."
+  ],
+  "progress_notes": [
+    "Inbox, Task, Project는 Archive/Restore 흐름으로 기본 목록에서 숨기고 보관 필터에서 복구하도록 구현했다.",
+    "Meeting note와 Project link는 deleted_at 기반 휴지통 필터와 복구 액션으로 구현했다.",
+    "Settings에 샘플 데이터 제거와 RESET WORKSPACE typed confirmation 초기화를 추가했다.",
+    "서버 테스트와 localhost API smoke로 삭제/복구/초기화 보호 시나리오를 검증했다.",
+    "in-app browser iab 및 로컬 Playwright가 없어 실제 브라우저 자동화는 수행하지 못했다."
+  ]
+}

@@ -13,11 +13,11 @@
   },
   "progress_summary": {
     "total_tasks": 11,
-    "not_started": 11,
+    "not_started": 10,
     "in_progress": 0,
     "completed": 0,
     "blocked": 0,
-    "skipped": 0
+    "skipped": 1
   },
   "estimated_duration": "1~2주 (W12, 필요 시 W13)",
   "priority": "Critical",
@@ -173,8 +173,8 @@
     {
       "id": "P7-T11",
       "title": "UI 텍스트 사전(dictionary) 분리",
-      "status": "not_started",
-      "description": "계획서 15.6의 국제화(i18n) 확장 대비를 위해 UI 텍스트를 사전 파일로 분리한다.",
+      "status": "skipped",
+      "description": "Phase 3.5 UX Trust Gate에서 처리되었으므로 Phase 7 범위에서는 제외한다.",
       "subtasks": [
         "모든 UI 텍스트를 ko.json 사전 파일로 추출",
         "컴포넌트에서 사전 파일 참조 방식으로 변경",
@@ -254,7 +254,7 @@
   ],
   "notes": [
     "이 Phase는 제품 출시를 위한 최종 관문이며, 여기서 발견된 버그나 성능 이슈에 따라 기간이 1~2주 변동될 수 있다.",
-    "UI 텍스트 사전 분리는 계획서에 명시된 국제화 확장 대비 조치이다. MVP에서는 한국어 단일이지만, 구조를 미리 갖추면 향후 확장이 용이하다.",
+    "UI 텍스트 사전 분리는 Phase 3.5에서 선처리되었으므로 Phase 7은 E2E, 배포, 문서화, 최종 QA에 집중한다.",
     "OpenAPI 문서 자동 생성은 계획서 21.2 요구 산출물에 포함되어 있다.",
     "ERD 다이어그램은 Prisma의 prisma-erd-generator 또는 dbdiagram.io를 사용하여 자동 생성한다."
   ]

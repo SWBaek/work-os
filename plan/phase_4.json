@@ -23,7 +23,8 @@
   "priority": "High",
   "dependencies": [
     "Phase 1",
-    "Phase 3"
+    "Phase 3",
+    "Phase 3.5"
   ],
   "tasks": [
     {
@@ -193,6 +194,7 @@
     }
   ],
   "notes": [
+    "Phase 3.5 이후 실행 순서는 Search를 Tags보다 우선한다. P4-T5(/api/v1/search, 한글 FTS 검증), P4-T6(/search), P4-T7(/ shortcut)을 먼저 완료한 뒤 P4-T1~P4-T4 Tags 작업을 진행한다.",
     "FTS5 한글 검색은 이 프로젝트의 핵심 기능이므로, Phase 0에서 미리 PoC(Proof of Concept)를 수행하는 것을 권장한다.",
     "태그 컴포넌트는 6개 엔티티에서 재사용되므로, 범용성 있게 설계해야 한다.",
     "검색 모달(Command Palette)은 VS Code의 Ctrl+P와 유사한 UX를 참고한다.",

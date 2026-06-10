@@ -80,6 +80,14 @@ export const CreateMeetingNoteSchema = z.object({
 
 export const UpdateMeetingNoteSchema = CreateMeetingNoteSchema.partial();
 
+export const DeletedQuerySchema = z.object({
+  deleted: z.enum(['true', 'false']).optional()
+});
+
+export const ResetWorkspaceSchema = z.object({
+  confirmation: z.literal('RESET WORKSPACE')
+});
+
 export const CreateDecisionSchema = z.object({
   project_id: z.string().uuid("Invalid Project ID"),
   meeting_note_id: z.string().uuid().optional(),
@@ -114,6 +122,7 @@ export const UpdateUserSettingSchema = z.object({
 
 export const ConvertMeetingActionItemSchema = z.object({
   action_item_text: z.string().min(1, "Action item text is required"),
+  action_item_key: z.string().min(1).max(256).optional(),
   project_id: z.string().uuid().optional(),
   priority: z.enum(enumValues(Priority)).optional().default(Priority.MEDIUM),
   due_date: z.string().optional(),

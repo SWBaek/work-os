@@ -109,7 +109,26 @@ describe('Phase 3 meeting note API', () => {
       .post(`/api/v1/projects/${projectId}/meeting-notes`)
       .send({
         title: 'Weekly sync',
-        markdown_content: '# Agenda\n<script>alert(1)</script>\n- [ ] Send summary',
+        markdown_content: [
+          '# Agenda',
+          '<script>alert(1)</script>',
+          '> Quote this decision',
+          '',
+          '- Parent item',
+          '  - Nested item',
+          '',
+          '| Topic | Owner |',
+          '| --- | --- |',
+          '| Export | Min |',
+          '',
+          '[Spec](https://example.com/spec)',
+          '',
+          '```ts',
+          'const ready = true;',
+          '```',
+          '',
+          '- [ ] Send summary',
+        ].join('\n'),
       })
       .expect(201);
     const noteId = noteResponse.body.data.id as string;
@@ -119,14 +138,27 @@ describe('Phase 3 meeting note API', () => {
     expect(exported.text).toContain('<h1>Agenda</h1>');
     expect(exported.text).not.toContain('<script>');
     expect(exported.text).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(exported.text).toContain('<blockquote>');
+    expect(exported.text).toContain('<table>');
+    expect(exported.text).toContain('<a href="https://example.com/spec">Spec</a>');
+    expect(exported.text).toContain('<pre><code class="language-ts">const ready = true;');
+    expect(exported.text).toContain('<ul>');
 
+    const actionItemKey = `${noteId}:0:send-summary`;
     const taskResponse = await request(app)
       .post(`/api/v1/meeting-notes/${noteId}/action-items/tasks`)
-      .send({ action_item_text: 'Send summary', priority: Priority.HIGH })
+      .send({ action_item_text: 'Send summary', action_item_key: actionItemKey, priority: Priority.HIGH })
       .expect(201);
     const taskId = taskResponse.body.data.id as string;
     created.tasks.push(taskId);
     expect(taskResponse.body.data.title).toBe('Send summary');
+    expect(taskResponse.body.data.source_action_key).toBe(actionItemKey);
+
+    const duplicateResponse = await request(app)
+      .post(`/api/v1/meeting-notes/${noteId}/action-items/tasks`)
+      .send({ action_item_text: 'Send summary changed title should not matter', action_item_key: actionItemKey, priority: Priority.HIGH })
+      .expect(200);
+    expect(duplicateResponse.body.data.id).toBe(taskId);
 
     const noteDetail = await request(app).get(`/api/v1/meeting-notes/${noteId}`).expect(200);
     expect(noteDetail.body.data.related_tasks.some((task: { id: string }) => task.id === taskId)).toBe(true);

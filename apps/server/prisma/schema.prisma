@@ -37,6 +37,9 @@ model ProjectLink {
   tasks       Task[]   @relation("TaskLinks")
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+
+  @@index([deleted_at])
 }
 
 model InboxItem {
@@ -66,6 +69,7 @@ model Task {
   sub_project_id  String?
   source_inbox_id String?
   source_inbox    InboxItem? @relation("InboxTask", fields: [source_inbox_id], references: [id])
+  source_action_key String? @unique
   status          String   // Inbox, Open, In Progress, Waiting, Hold, Done, Archived, Canceled
   priority        String   // Critical, High, Medium, Low
   due_date        DateTime?
@@ -97,8 +101,10 @@ model MeetingNote {
   decisions       Decision[] @relation("MeetingNoteDecisions")
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
+  deleted_at      DateTime?
 
   @@index([project_id, meeting_date])
+  @@index([deleted_at])
 }
 
 model Decision {
@@ -119,8 +125,10 @@ model Decision {
   tags             Tag[]    @relation("DecisionTags")
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
+  deleted_at       DateTime?
 
   @@index([project_id, decision_date])
+  @@index([deleted_at])
 }
 
 model Tag {

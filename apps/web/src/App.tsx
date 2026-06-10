@@ -3,19 +3,21 @@ import { BrowserRouter, Link, Route, Routes, useNavigate, useParams, useSearchPa
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from '@dnd-kit/core';
 import {
+  Archive,
+  AlertTriangle,
   Bot,
   CheckSquare,
   ChevronRight,
-  Clock3,
   Download,
   Inbox as InboxIcon,
   LinkIcon,
   Mail,
   PanelTop,
   Plus,
-  SlidersHorizontal,
+  RotateCcw,
+  Trash2,
 } from 'lucide-react';
-import { Priority, ProjectStatus, SourceType, TaskStatus } from 'shared';
+import { InboxStatus, Priority, ProjectStatus, SourceType, TaskStatus } from 'shared';
 import api from './lib/api';
 import t from './lib/i18n/ko.json';
 import { statusColors, priorityClasses, taskStatuses, toTags, isoOrUndefined } from './constants';
@@ -23,7 +25,7 @@ import { PageHeader, Button, Input, Select, Badge, StatusBadge } from './compone
 import { MeetingNoteEditor } from './components/MeetingNoteEditor';
 import { Layout } from './layout/AppLayout';
 
-import { Project, ProjectLink, InboxItem, Task, ApiList, ApiOne, KanbanColumnData, TaskForm, ThemeType, UserSetting, MeetingNote } from './types';
+import { Project, ProjectLink, InboxItem, Task, ApiList, ApiOne, KanbanColumnData, TaskForm, ThemeType, UserSetting, MeetingNote, MaintenanceSummary } from './types';
 
 type DashboardSummary = {
   today: number;
@@ -34,6 +36,75 @@ type DashboardSummary = {
     overdue: Task[];
     waiting: Task[];
   };
+};
+
+type ActionNotice = { message: string; undoLabel?: string; onUndo?: () => void };
+
+const ConfirmAction = ({
+  label,
+  title,
+  message,
+  icon,
+  variant = 'secondary',
+  disabled,
+  onConfirm,
+}: {
+  label: string;
+  title: string;
+  message: string;
+  icon?: React.ReactNode;
+  variant?: 'secondary' | 'danger' | 'ghost';
+  disabled?: boolean;
+  onConfirm: () => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant={variant} disabled={disabled} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(true); }}>
+        {icon}
+        {label}
+      </Button>
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div role="dialog" aria-modal="true" className="w-full max-w-[440px] rounded-xl border border-border bg-background p-5 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-[18px] font-semibold text-heading">{title}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setOpen(false)}>{t.cancel}</Button>
+              <Button variant={variant === 'danger' ? 'danger' : 'secondary'} onClick={() => { setOpen(false); onConfirm(); }}>
+                {label}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+const ActionNoticeBar = ({ notice, onClear }: { notice?: ActionNotice | null; onClear: () => void }) => {
+  if (!notice) return null;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 text-sm">
+      <span className="font-semibold text-heading">{notice.message}</span>
+      <div className="flex items-center gap-2">
+        {notice.onUndo ? (
+          <Button variant="secondary" onClick={() => { notice.onUndo?.(); onClear(); }}>
+            <RotateCcw className="h-4 w-4" />
+            {notice.undoLabel ?? t.undo}
+          </Button>
+        ) : null}
+        <Button variant="ghost" onClick={onClear}>{t.cancel}</Button>
+      </div>
+    </div>
+  );
 };
 
 const useProjects = () => useQuery({
@@ -47,7 +118,17 @@ const useProjectDetail = (projectId?: string) => useQuery({
   queryFn: async () => (await api.get<ApiOne<Project>>(`/projects/${projectId}`)).data.data,
 });
 
-const TaskCard = ({ task, draggable = false }: { task: Task; draggable?: boolean }) => {
+const TaskCard = ({
+  task,
+  draggable = false,
+  onArchive,
+  onRestore,
+}: {
+  task: Task;
+  draggable?: boolean;
+  onArchive?: (task: Task) => void;
+  onRestore?: (task: Task) => void;
+}) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.id, data: { status: task.status }, disabled: !draggable });
   const style = transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined;
   return (
@@ -57,7 +138,24 @@ const TaskCard = ({ task, draggable = false }: { task: Task; draggable?: boolean
           <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusColors[task.status] }} />
           <Link to={`/tasks/${task.id}`} className="truncate font-semibold text-heading">{task.title}</Link>
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">{task.priority}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs text-muted-foreground">{task.priority}</span>
+          {onArchive ? (
+            <ConfirmAction
+              label={t.archive}
+              title={t.archiveConfirmTitle}
+              message={t.archiveTaskImpact}
+              icon={<Archive className="h-4 w-4" />}
+              onConfirm={() => onArchive(task)}
+            />
+          ) : null}
+          {onRestore ? (
+            <Button variant="secondary" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onRestore(task); }}>
+              <RotateCcw className="h-4 w-4" />
+              {t.restore}
+            </Button>
+          ) : null}
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         {task.tags.slice(0, 3).map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}
@@ -65,40 +163,48 @@ const TaskCard = ({ task, draggable = false }: { task: Task; draggable?: boolean
       </div>
       <div className={`mt-2 flex justify-between text-xs ${task.overdue ? 'font-semibold text-danger' : 'text-muted-foreground'}`}>
         <span>{task.due_date ? new Date(task.due_date).toLocaleDateString('ko-KR') : '-'}</span>
-        <span className="truncate">{task.project?.name ?? 'No Project'}</span>
+        <span className="truncate">{task.project?.name ?? t.noProject}</span>
       </div>
-      {task.source_inbox ? <div className="mt-2 text-xs text-muted-foreground">Inbox: {task.source_inbox.raw_content.slice(0, 48)}</div> : null}
     </div>
   );
 };
 
 const QuickInbox = () => {
   const projects = useProjects();
-  const [sourceType, setSourceType] = useState<SourceType>(SourceType.OTHER);
   const [rawContent, setRawContent] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [tags, setTags] = useState('');
   const queryClient = useQueryClient();
   const createInbox = useMutation({
-    mutationFn: async () => api.post('/inbox', { source_type: sourceType, raw_content: rawContent, project_id: projectId || undefined, tags: toTags(tags) }),
+    mutationFn: async () => api.post('/inbox', { source_type: SourceType.OTHER, raw_content: rawContent, project_id: projectId || undefined }),
     onSuccess: async () => {
       setRawContent('');
-      setTags('');
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
       await queryClient.invalidateQueries({ queryKey: ['unprocessed-count'] });
     },
   });
+  const submitQuickInbox = () => {
+    if (!rawContent.trim() || createInbox.isPending) return;
+    createInbox.mutate();
+  };
   return (
-    <form onSubmit={(event) => { event.preventDefault(); if (rawContent.trim()) createInbox.mutate(); }} className="grid grid-cols-[140px_1fr_180px_180px_auto] gap-2">
-      <Select value={sourceType} onChange={(event) => setSourceType(event.target.value as SourceType)}>
-        {Object.values(SourceType).map((value) => <option key={value} value={value}>{value}</option>)}
-      </Select>
-      <Input value={rawContent} onChange={(event) => setRawContent(event.target.value)} placeholder={t.content} />
-      <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+    <form onSubmit={(event) => { event.preventDefault(); submitQuickInbox(); }} className="grid grid-cols-[1fr_220px_auto] gap-2">
+      <Input
+        value={rawContent}
+        onChange={(event) => setRawContent(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            submitQuickInbox();
+          }
+        }}
+        placeholder={t.quickInboxPlaceholder}
+        className="h-12 rounded-lg"
+      />
+      <Select className="h-12 rounded-full" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
         <option value="">{t.general}</option>
         {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
       </Select>
-      <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.tags} />
       <Button type="submit" disabled={createInbox.isPending}><Plus className="h-4 w-4" />{t.create}</Button>
     </form>
   );
@@ -139,8 +245,7 @@ const PriorityPill = ({ priority }: { priority: Priority }) => {
 
 const DashboardInboxTable = ({ items }: { items: InboxItem[] }) => (
   <div className="overflow-hidden px-4 pb-4">
-    <div className="grid grid-cols-[32px_120px_1fr_120px_160px_90px] border-b border-border py-2 text-xs font-semibold text-heading">
-      <span />
+    <div className="grid grid-cols-[120px_1fr_120px_160px_90px] border-b border-border py-2 text-xs font-semibold text-heading">
       <span>{t.source}</span>
       <span>{t.content}</span>
       <span>{t.received}</span>
@@ -149,8 +254,7 @@ const DashboardInboxTable = ({ items }: { items: InboxItem[] }) => (
     </div>
     {items.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">{t.empty}</div> : null}
     {items.map((item) => (
-      <div key={item.id} className="grid min-h-[48px] grid-cols-[32px_120px_1fr_120px_160px_90px] items-center border-b border-border last:border-b-0">
-        <input type="checkbox" className="h-4 w-4 rounded border-border" aria-label={item.raw_content} />
+      <div key={item.id} className="grid min-h-[48px] grid-cols-[120px_1fr_120px_160px_90px] items-center border-b border-border last:border-b-0">
         <div className="flex items-center gap-2 text-sm font-semibold text-heading">
           <SourceIcon source={item.source_type} />
           {item.source_type}
@@ -264,13 +368,6 @@ const Dashboard = () => {
           icon={<InboxIcon className="h-5 w-5 text-heading" />}
           title={t.inbox}
           count={inboxItems.length}
-          action={(
-            <div className="flex items-center gap-2">
-              <Button variant="secondary"><Plus className="h-4 w-4" />{t.add}</Button>
-              <Button variant="secondary"><SlidersHorizontal className="h-4 w-4" />{t.classify}</Button>
-              <Button variant="secondary"><Clock3 className="h-4 w-4" />{t.snooze}</Button>
-            </div>
-          )}
         />
         <DashboardInboxTable items={inboxItems} />
       </DashboardPanel>
@@ -313,22 +410,65 @@ const ProjectForm = ({ parentId }: { parentId?: string }) => {
 };
 
 const Projects = () => {
-  const projects = useProjects();
+  const [statusFilter, setStatusFilter] = useState<'active' | ProjectStatus>('active');
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
+  const queryClient = useQueryClient();
+  const projects = useQuery({
+    queryKey: ['projects', statusFilter],
+    queryFn: async () => (await api.get<ApiList<Project>>(statusFilter === ProjectStatus.ARCHIVED ? `/projects?status=${encodeURIComponent(ProjectStatus.ARCHIVED)}` : '/projects')).data.data,
+  });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['projects'] });
+    await queryClient.invalidateQueries({ queryKey: ['layout-projects'] });
+    await queryClient.invalidateQueries({ queryKey: ['project'] });
+  };
+  const restoreProject = useMutation({
+    mutationFn: async (project: Project) => api.patch(`/projects/${project.id}/restore`),
+    onSuccess: invalidate,
+  });
+  const archiveProject = useMutation({
+    mutationFn: async (project: Project) => api.delete(`/projects/${project.id}`),
+    onSuccess: async (_result, project) => {
+      await invalidate();
+      setNotice({ message: `${project.name} ${t.archived}`, onUndo: () => restoreProject.mutate(project) });
+    },
+  });
   return (
     <div className="space-y-4">
       <PageHeader title={t.projects} />
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <ProjectForm />
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setStatusFilter('active')} className={`rounded-full px-3 py-1 text-sm ${statusFilter === 'active' ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.active}</button>
+        <button type="button" onClick={() => setStatusFilter(ProjectStatus.ARCHIVED)} className={`rounded-full px-3 py-1 text-sm ${statusFilter === ProjectStatus.ARCHIVED ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.archived}</button>
+      </div>
       <div className="grid grid-cols-3 gap-3">
         {(projects.data ?? []).map((project) => (
-          <Link key={project.id} to={`/projects/${project.id}`} className="rounded-lg border border-border p-4 hover:bg-surface">
+          <div key={project.id} className="rounded-lg border border-border p-4 hover:bg-surface">
             <div className="flex items-start justify-between gap-2">
-              <h2 className="font-semibold text-heading">{project.name}</h2>
-              <StatusBadge status={project.status} />
+              <Link to={`/projects/${project.id}`} className="min-w-0 font-semibold text-heading hover:text-primary">{project.name}</Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <StatusBadge status={project.status} />
+                {statusFilter === ProjectStatus.ARCHIVED ? (
+                  <Button variant="secondary" onClick={() => restoreProject.mutate(project)}>
+                    <RotateCcw className="h-4 w-4" />
+                    {t.restore}
+                  </Button>
+                ) : (
+                  <ConfirmAction
+                    label={t.archive}
+                    title={t.archiveConfirmTitle}
+                    message={t.archiveProjectImpact}
+                    icon={<Archive className="h-4 w-4" />}
+                    onConfirm={() => archiveProject.mutate(project)}
+                  />
+                )}
+              </div>
             </div>
             <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{project.description ?? '-'}</p>
             <div className="mt-3 flex flex-wrap gap-1">{project.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
-            <div className="mt-3 text-xs text-muted-foreground">{project._count?.tasks ?? 0} tasks 쨌 {project._count?.links ?? 0} links</div>
-          </Link>
+            <div className="mt-3 text-xs text-muted-foreground">{project._count?.tasks ?? 0} {t.taskCount} · {project._count?.links ?? 0} {t.linkCount}</div>
+          </div>
         ))}
       </div>
     </div>
@@ -392,23 +532,58 @@ const ProjectTabBar = ({ projectId, activeTab }: { projectId: string; activeTab:
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const data = useProjectDetail(projectId).data;
+  const archiveProject = useMutation({
+    mutationFn: async () => api.delete(`/projects/${projectId}`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['layout-projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      navigate('/projects');
+    },
+  });
+  const restoreProject = useMutation({
+    mutationFn: async () => api.patch(`/projects/${projectId}/restore`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['layout-projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    },
+  });
 
   if (!data) return <PageHeader title={t.project} />;
   const tab = (searchParams.get('tab') as ProjectTabKey | null) ?? 'overview';
 
   return (
     <div className="space-y-4">
-      <PageHeader title={data.name} />
+      <PageHeader
+        title={data.name}
+        action={data.status === ProjectStatus.ARCHIVED ? (
+          <Button variant="secondary" onClick={() => restoreProject.mutate()}>
+            <RotateCcw className="h-4 w-4" />
+            {t.restore}
+          </Button>
+        ) : (
+          <ConfirmAction
+            label={t.archive}
+            title={t.archiveConfirmTitle}
+            message={t.archiveProjectImpact}
+            icon={<Archive className="h-4 w-4" />}
+            onConfirm={() => archiveProject.mutate()}
+          />
+        )}
+      />
       <ProjectHeaderCard project={data} />
       <ProjectTabBar projectId={data.id} activeTab={tab} />
       {tab === 'overview' ? (
         <div className="grid grid-cols-3 gap-3">
           <Metric label={t.tasks} value={data.tasks?.length ?? 0} />
           <Metric label={t.links} value={data.links?.length ?? 0} />
-          <Metric label="Sub Projects" value={data.sub_projects?.length ?? 0} />
+          <Metric label={t.subProjects} value={data.sub_projects?.length ?? 0} />
           <section className="col-span-3 rounded-lg border border-border p-4">
-            <h2 className="mb-3 font-semibold text-heading">Sub Projects</h2>
+            <h2 className="mb-3 font-semibold text-heading">{t.subProjects}</h2>
             <ProjectForm parentId={data.id} />
             <div className="mt-3 flex flex-wrap gap-2">{data.sub_projects?.map((sub) => <Badge key={sub.id}>{sub.name}</Badge>)}</div>
           </section>
@@ -425,10 +600,28 @@ const ProjectDetail = () => {
 const ProjectMeetingNotesPage = () => {
   const { projectId } = useParams();
   const data = useProjectDetail(projectId).data;
+  const [showTrash, setShowTrash] = useState(false);
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
+  const queryClient = useQueryClient();
   const notes = useQuery({
-    queryKey: ['meeting-notes', projectId],
+    queryKey: ['meeting-notes', projectId, showTrash],
     enabled: Boolean(projectId),
-    queryFn: async () => (await api.get<ApiList<MeetingNote>>(`/projects/${projectId}/meeting-notes`)).data.data,
+    queryFn: async () => (await api.get<ApiList<MeetingNote>>(`/projects/${projectId}/meeting-notes${showTrash ? '?deleted=true' : ''}`)).data.data,
+  });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    await queryClient.invalidateQueries({ queryKey: ['meeting-notes', projectId] });
+  };
+  const restoreNote = useMutation({
+    mutationFn: async (note: MeetingNote) => api.patch(`/meeting-notes/${note.id}/restore`),
+    onSuccess: invalidate,
+  });
+  const deleteNote = useMutation({
+    mutationFn: async (note: MeetingNote) => api.delete(`/meeting-notes/${note.id}`),
+    onSuccess: async (_result, note) => {
+      await invalidate();
+      setNotice({ message: `${note.title ?? t.meetingNotes} ${t.delete}`, onUndo: () => restoreNote.mutate(note) });
+    },
   });
 
   if (!data) return <PageHeader title={t.meetingNotes} />;
@@ -447,22 +640,39 @@ const ProjectMeetingNotesPage = () => {
           </Link>
         )}
       />
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <ProjectHeaderCard project={data} />
       <ProjectTabBar projectId={data.id} activeTab="meeting-notes" />
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setShowTrash(false)} className={`rounded-full px-3 py-1 text-sm ${!showTrash ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.active}</button>
+        <button type="button" onClick={() => setShowTrash(true)} className={`rounded-full px-3 py-1 text-sm ${showTrash ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.trash}</button>
+      </div>
       <section className="space-y-2">
         {(notes.data ?? []).length === 0 ? <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">{t.empty}</div> : null}
         {(notes.data ?? []).map((note) => (
-          <div key={note.id} className="rounded-lg border border-border bg-background p-4">
+          <div key={note.id} className="rounded-lg border border-border bg-background p-4 transition-colors hover:bg-surface">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+              <Link to={`/projects/${data.id}/meeting-notes/${note.id}`} className="min-w-0 flex-1">
                 <div className="text-xs text-muted-foreground">
                   {note.meeting_date ? new Date(note.meeting_date).toLocaleDateString('ko-KR') : '-'}
                 </div>
                 <h2 className="mt-1 truncate font-semibold text-heading">{note.title ?? t.meetingNotes}</h2>
-              </div>
-              <Link to={`/projects/${data.id}/meeting-notes/${note.id}`} className="text-sm font-semibold text-primary">
-                {t.viewAll}
               </Link>
+              {showTrash ? (
+                <Button variant="secondary" onClick={() => restoreNote.mutate(note)}>
+                  <RotateCcw className="h-4 w-4" />
+                  {t.restore}
+                </Button>
+              ) : (
+                <ConfirmAction
+                  label={t.delete}
+                  title={t.deleteConfirmTitle}
+                  message={t.deleteNoteImpact}
+                  icon={<Trash2 className="h-4 w-4" />}
+                  variant="danger"
+                  onConfirm={() => deleteNote.mutate(note)}
+                />
+              )}
             </div>
           </div>
         ))}
@@ -477,9 +687,22 @@ const useMeetingNote = (noteId?: string) => useQuery({
   queryFn: async () => (await api.get<ApiOne<MeetingNote>>(`/meeting-notes/${noteId}`)).data.data,
 });
 
-const extractActionItems = (markdown: string) => {
+const hashActionText = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+};
+
+const extractActionItems = (markdown: string, noteId: string) => {
   const matches = markdown.matchAll(/^[-*]\s+\[[ xX]\]\s+(.+)$/gm);
-  return Array.from(matches, (match) => match[1].trim()).filter(Boolean);
+  return Array.from(matches, (match, index) => {
+    const text = match[1].trim();
+    const normalized = text.replace(/\s+/g, ' ').toLowerCase();
+    return { text, key: `${noteId}:${index}:${hashActionText(normalized)}` };
+  }).filter((item) => item.text);
 };
 
 const ProjectMeetingNoteDetailPage = () => {
@@ -522,12 +745,27 @@ const ProjectMeetingNoteDetailPage = () => {
   });
 
   const convertActionItem = useMutation({
-    mutationFn: async (actionItemText: string) => api.post(`/meeting-notes/${noteId}/action-items/tasks`, { action_item_text: actionItemText }),
+    mutationFn: async (actionItem: { text: string; key: string }) => api.post(`/meeting-notes/${noteId}/action-items/tasks`, { action_item_text: actionItem.text, action_item_key: actionItem.key }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['meeting-note', noteId] });
       await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       await queryClient.invalidateQueries({ queryKey: ['kanban'] });
+    },
+  });
+  const deleteNote = useMutation({
+    mutationFn: async () => api.delete(`/meeting-notes/${noteId}`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      await queryClient.invalidateQueries({ queryKey: ['meeting-notes', projectId] });
+      navigate(`/projects/${projectId}/meeting-notes`);
+    },
+  });
+  const restoreNote = useMutation({
+    mutationFn: async () => api.patch(`/meeting-notes/${noteId}/restore`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['meeting-note', noteId] });
+      await queryClient.invalidateQueries({ queryKey: ['meeting-notes', projectId] });
     },
   });
 
@@ -545,6 +783,7 @@ const ProjectMeetingNoteDetailPage = () => {
       updateMutation.mutate(initialEditorContent);
     }
   };
+  const actionItems = !isCreateMode && note ? extractActionItems(note.markdown_content, note.id) : [];
 
   return (
     <div className="space-y-4">
@@ -558,9 +797,25 @@ const ProjectMeetingNoteDetailPage = () => {
                 href={`/api/v1/meeting-notes/${note.id}/export.html`}
                 className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-semibold text-heading transition-colors hover:bg-surface-2"
               >
-                <Download className="h-4 w-4" />
-                HTML Export
+              <Download className="h-4 w-4" />
+                {t.htmlExport}
               </a>
+            ) : null}
+            {!isCreateMode && note && !note.deleted_at ? (
+              <ConfirmAction
+                label={t.delete}
+                title={t.deleteConfirmTitle}
+                message={t.deleteNoteImpact}
+                icon={<Trash2 className="h-4 w-4" />}
+                variant="danger"
+                onConfirm={() => deleteNote.mutate()}
+              />
+            ) : null}
+            {!isCreateMode && note?.deleted_at ? (
+              <Button variant="secondary" onClick={() => restoreNote.mutate()}>
+                <RotateCcw className="h-4 w-4" />
+                {t.restore}
+              </Button>
             ) : null}
             <Link to={`/projects/${data.id}/meeting-notes`} className="text-sm font-semibold text-primary">{t.meetingNotes}</Link>
           </div>
@@ -571,7 +826,7 @@ const ProjectMeetingNoteDetailPage = () => {
           value={titleValue}
           onChange={(e) => setTitleDraft(e.target.value)}
           onBlur={handleSaveField}
-          placeholder="?뚯쓽濡??쒕ぉ"
+          placeholder={t.meetingNoteTitle}
           className="text-lg font-bold"
         />
         <div className="grid grid-cols-2 gap-4">
@@ -585,7 +840,7 @@ const ProjectMeetingNoteDetailPage = () => {
             value={attendeesValue}
             onChange={(e) => setAttendeesDraft(e.target.value)}
             onBlur={handleSaveField}
-            placeholder="참석자"
+            placeholder={t.attendees}
           />
         </div>
         {(!isCreateMode && note) ? (
@@ -598,20 +853,20 @@ const ProjectMeetingNoteDetailPage = () => {
         <section className="space-y-3 rounded-lg border border-border bg-background p-6">
           <div className="flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-[18px] font-semibold text-heading">Action Items</h2>
+            <h2 className="text-[18px] font-semibold text-heading">{t.actionItems}</h2>
           </div>
-          {extractActionItems(note.markdown_content).length === 0 ? <div className="text-sm text-muted-foreground">{t.empty}</div> : null}
-          {extractActionItems(note.markdown_content).map((actionItem) => {
-            const relatedTask = note.related_tasks.find((task) => task.title === actionItem);
+          {actionItems.length === 0 ? <div className="text-sm text-muted-foreground">{t.empty}</div> : null}
+          {actionItems.map((actionItem) => {
+            const relatedTask = note.related_tasks.find((task) => task.source_action_key === actionItem.key);
             return (
-              <div key={actionItem} className="flex items-center justify-between gap-3 rounded-lg bg-surface p-3">
-                <span className="text-sm font-semibold text-heading">{actionItem}</span>
+              <div key={actionItem.key} className="flex items-center justify-between gap-3 rounded-lg bg-surface p-3">
+                <span className="text-sm font-semibold text-heading">{actionItem.text}</span>
                 {relatedTask ? (
-                  <Link to={`/tasks/${relatedTask.id}`} className="text-sm font-semibold text-primary">Converted</Link>
+                  <Link to={`/tasks/${relatedTask.id}`} className="text-sm font-semibold text-primary">{t.converted}</Link>
                 ) : (
                   <Button variant="secondary" onClick={() => convertActionItem.mutate(actionItem)} disabled={convertActionItem.isPending}>
                     <Plus className="h-4 w-4" />
-                    Task
+                    {t.createTask}
                   </Button>
                 )}
               </div>
@@ -633,7 +888,14 @@ const Metric = ({ label, value }: { label: string; value: number }) => (
 const ProjectLinks = ({ projectId, links }: { projectId: string; links: ProjectLink[] }) => {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [showTrash, setShowTrash] = useState(false);
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
   const queryClient = useQueryClient();
+  const deletedLinks = useQuery({
+    queryKey: ['project-links', projectId, 'trash'],
+    enabled: showTrash,
+    queryFn: async () => (await api.get<ApiList<ProjectLink>>(`/projects/${projectId}/links?deleted=true`)).data.data,
+  });
   const mutation = useMutation({
     mutationFn: async () => api.post(`/projects/${projectId}/links`, { url_or_path: url, title }),
     onSuccess: async () => {
@@ -642,34 +904,104 @@ const ProjectLinks = ({ projectId, links }: { projectId: string; links: ProjectL
       await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
+  const restoreLink = useMutation({
+    mutationFn: async (link: ProjectLink) => api.patch(`/project-links/${link.id}/restore`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      await queryClient.invalidateQueries({ queryKey: ['project-links', projectId, 'trash'] });
+    },
+  });
+  const deleteLink = useMutation({
+    mutationFn: async (link: ProjectLink) => api.delete(`/project-links/${link.id}`),
+    onSuccess: async (_result, link) => {
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      await queryClient.invalidateQueries({ queryKey: ['project-links', projectId, 'trash'] });
+      setNotice({ message: `${link.title ?? link.url_or_path} ${t.delete}`, onUndo: () => restoreLink.mutate(link) });
+    },
+  });
+  const visibleLinks = showTrash ? deletedLinks.data ?? [] : links;
   return (
     <section className="space-y-3">
-      <form onSubmit={(event) => { event.preventDefault(); if (url.trim()) mutation.mutate(); }} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-        <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.title} />
-        <Input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="URL / Path" />
-        <Button type="submit"><LinkIcon className="h-4 w-4" />{t.create}</Button>
-      </form>
-      {links.map((link) => <div key={link.id} className="rounded-lg border border-border p-3"><a href={link.url_or_path} className="font-semibold text-heading">{link.title ?? link.url_or_path}</a><div className="text-xs text-muted-foreground">{link.type}</div></div>)}
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
+      {!showTrash ? (
+        <form onSubmit={(event) => { event.preventDefault(); if (url.trim()) mutation.mutate(); }} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+          <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.title} />
+          <Input value={url} onChange={(event) => setUrl(event.target.value)} placeholder={t.urlOrPath} />
+          <Button type="submit"><LinkIcon className="h-4 w-4" />{t.create}</Button>
+        </form>
+      ) : null}
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setShowTrash(false)} className={`rounded-full px-3 py-1 text-sm ${!showTrash ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.active}</button>
+        <button type="button" onClick={() => setShowTrash(true)} className={`rounded-full px-3 py-1 text-sm ${showTrash ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.trash}</button>
+      </div>
+      {visibleLinks.map((link) => (
+        <div key={link.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+          <div className="min-w-0">
+            <a href={link.url_or_path} className="font-semibold text-heading">{link.title ?? link.url_or_path}</a>
+            <div className="text-xs text-muted-foreground">{link.type}</div>
+          </div>
+          {showTrash ? (
+            <Button variant="secondary" onClick={() => restoreLink.mutate(link)}>
+              <RotateCcw className="h-4 w-4" />
+              {t.restore}
+            </Button>
+          ) : (
+            <ConfirmAction
+              label={t.delete}
+              title={t.deleteConfirmTitle}
+              message={t.deleteLinkImpact}
+              icon={<Trash2 className="h-4 w-4" />}
+              variant="danger"
+              onConfirm={() => deleteLink.mutate(link)}
+            />
+          )}
+        </div>
+      ))}
     </section>
   );
 };
 
-const InboxList = ({ items, compact = false }: { items: InboxItem[]; compact?: boolean }) => (
+const InboxList = ({
+  items,
+  allowConvert = true,
+  onArchive,
+  onRestore,
+}: {
+  items: InboxItem[];
+  allowConvert?: boolean;
+  onArchive?: (item: InboxItem) => void;
+  onRestore?: (item: InboxItem) => void;
+}) => (
   <div className="space-y-2">
     {items.length === 0 ? <div className="rounded-lg border border-border p-6 text-center text-muted-foreground">{t.empty}</div> : null}
     {items.map((item) => (
       <div key={item.id} className="rounded-lg border border-border p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="line-clamp-2 font-semibold text-heading">{item.raw_content}</p>
-          <StatusBadge status={item.status} />
+          <div className="flex items-center gap-2">
+            <StatusBadge status={item.status} />
+            {onArchive ? (
+              <ConfirmAction
+                label={t.archive}
+                title={t.archiveConfirmTitle}
+                message={t.archiveInboxImpact}
+                icon={<Archive className="h-4 w-4" />}
+                onConfirm={() => onArchive(item)}
+              />
+            ) : null}
+            {onRestore ? (
+              <Button variant="secondary" onClick={() => onRestore(item)}>
+                <RotateCcw className="h-4 w-4" />
+                {t.restore}
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="mt-2 flex flex-wrap gap-1">{item.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
-        {!compact ? <ConvertInboxForm item={item} /> : null}
+        {allowConvert && item.status === InboxStatus.UNPROCESSED ? <ConvertInboxForm item={item} /> : null}
         {item.converted_tasks.length > 0 ? (
           <div className="mt-2 text-xs text-muted-foreground">
-            {item.converted_tasks.every((task) => task.title === item.raw_content)
-              ? `${t.convertedToTask} (${item.converted_tasks.length})`
-              : item.converted_tasks.map((task) => task.title).join(', ')}
+            {t.convertedToTask}: {item.converted_tasks.map((task) => task.title).join(', ')}
           </div>
         ) : null}
       </div>
@@ -681,19 +1013,48 @@ const Inbox = () => {
   const [sourceType, setSourceType] = useState<SourceType>(SourceType.OTHER);
   const [rawContent, setRawContent] = useState('');
   const [tags, setTags] = useState('');
+  const [statusFilter, setStatusFilter] = useState<InboxStatus>(InboxStatus.UNPROCESSED);
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
   const queryClient = useQueryClient();
-  const inbox = useQuery({ queryKey: ['inbox'], queryFn: async () => (await api.get<ApiList<InboxItem>>('/inbox')).data.data });
+  const inbox = useQuery({
+    queryKey: ['inbox', statusFilter],
+    queryFn: async () => (await api.get<ApiList<InboxItem>>(`/inbox?status=${encodeURIComponent(statusFilter)}`)).data.data,
+  });
   const createInbox = useMutation({
     mutationFn: async () => api.post('/inbox', { source_type: sourceType, raw_content: rawContent, tags: toTags(tags) }),
     onSuccess: async () => {
       setRawContent('');
       setTags('');
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
     },
   });
+  const restoreInbox = useMutation({
+    mutationFn: async (item: InboxItem) => api.patch(`/inbox/${item.id}/restore`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
+      await queryClient.invalidateQueries({ queryKey: ['unprocessed-count'] });
+    },
+  });
+  const archiveInbox = useMutation({
+    mutationFn: async (item: InboxItem) => api.delete(`/inbox/${item.id}`),
+    onSuccess: async (_result, item) => {
+      await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
+      await queryClient.invalidateQueries({ queryKey: ['unprocessed-count'] });
+      setNotice({ message: `${item.raw_content.slice(0, 48)} ${t.archived}`, onUndo: () => restoreInbox.mutate(item) });
+    },
+  });
+  const historyFilters = [
+    { status: InboxStatus.UNPROCESSED, label: t.unprocessed },
+    { status: InboxStatus.CONVERTED, label: t.converted },
+    { status: InboxStatus.ARCHIVED, label: t.archived },
+  ];
   return (
     <div className="space-y-4">
-      <PageHeader title={t.inbox} />
+      <PageHeader title={t.inboxHistory} />
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <form onSubmit={(event) => { event.preventDefault(); if (rawContent.trim()) createInbox.mutate(); }} className="grid grid-cols-[140px_1fr_180px_auto] gap-2">
         <Select value={sourceType} onChange={(event) => setSourceType(event.target.value as SourceType)}>
           {Object.values(SourceType).map((value) => <option key={value} value={value}>{value}</option>)}
@@ -702,7 +1063,25 @@ const Inbox = () => {
         <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.tags} />
         <Button type="submit"><Plus className="h-4 w-4" />{t.create}</Button>
       </form>
-      <InboxList items={inbox.data ?? []} />
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-heading">{t.historyFilter}</span>
+        {historyFilters.map((filter) => (
+          <button
+            key={filter.status}
+            type="button"
+            onClick={() => setStatusFilter(filter.status)}
+            className={`rounded-full px-3 py-1 text-sm ${statusFilter === filter.status ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+      <InboxList
+        items={inbox.data ?? []}
+        allowConvert={statusFilter === InboxStatus.UNPROCESSED}
+        onArchive={statusFilter !== InboxStatus.ARCHIVED ? (item) => archiveInbox.mutate(item) : undefined}
+        onRestore={statusFilter === InboxStatus.ARCHIVED ? (item) => restoreInbox.mutate(item) : undefined}
+      />
     </div>
   );
 };
@@ -723,15 +1102,17 @@ const ConvertInboxForm = ({ item }: { item: InboxItem }) => {
     }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       await queryClient.invalidateQueries({ queryKey: ['kanban'] });
+      await queryClient.invalidateQueries({ queryKey: ['project'] });
     },
   });
   return (
     <form onSubmit={(event) => { event.preventDefault(); mutation.mutate(); }} className="mt-3 grid grid-cols-[1fr_160px_120px_120px_140px_auto] gap-2">
       <Input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder={t.taskTitleOptional} />
       <Select value={form.project_id} onChange={(event) => setForm({ ...form, project_id: event.target.value })}>
-        <option value="">No Project</option>
+        <option value="">{t.noProject}</option>
         {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
       </Select>
       <Select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value as Priority })}>
@@ -745,12 +1126,137 @@ const ConvertInboxForm = ({ item }: { item: InboxItem }) => {
 };
 
 const Tasks = () => {
-  const tasks = useQuery({ queryKey: ['tasks'], queryFn: async () => (await api.get<ApiList<Task>>('/tasks')).data.data });
+  const [statusFilter, setStatusFilter] = useState<'active' | TaskStatus>('active');
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
+  const queryClient = useQueryClient();
+  const tasks = useQuery({
+    queryKey: ['tasks', statusFilter],
+    queryFn: async () => (await api.get<ApiList<Task>>(statusFilter === TaskStatus.ARCHIVED ? `/tasks?status=${encodeURIComponent(TaskStatus.ARCHIVED)}` : '/tasks')).data.data,
+  });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    await queryClient.invalidateQueries({ queryKey: ['kanban'] });
+    await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+    await queryClient.invalidateQueries({ queryKey: ['project'] });
+  };
+  const restoreTask = useMutation({
+    mutationFn: async (task: Task) => api.patch(`/tasks/${task.id}/restore`),
+    onSuccess: invalidate,
+  });
+  const archiveTask = useMutation({
+    mutationFn: async (task: Task) => api.delete(`/tasks/${task.id}`),
+    onSuccess: async (_result, task) => {
+      await invalidate();
+      setNotice({ message: `${task.title} ${t.archived}`, onUndo: () => restoreTask.mutate(task) });
+    },
+  });
   return (
     <div className="space-y-4">
       <PageHeader title={t.tasks} />
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <TaskCreateForm />
-      <div className="space-y-2">{(tasks.data ?? []).map((task) => <TaskCard key={task.id} task={task} />)}</div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => setStatusFilter('active')} className={`rounded-full px-3 py-1 text-sm ${statusFilter === 'active' ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.active}</button>
+        <button type="button" onClick={() => setStatusFilter(TaskStatus.ARCHIVED)} className={`rounded-full px-3 py-1 text-sm ${statusFilter === TaskStatus.ARCHIVED ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.archived}</button>
+      </div>
+      <div className="space-y-2">
+        {(tasks.data ?? []).map((task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onArchive={statusFilter === 'active' ? (item) => archiveTask.mutate(item) : undefined}
+            onRestore={statusFilter === TaskStatus.ARCHIVED ? (item) => restoreTask.mutate(item) : undefined}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TaskDetail = () => {
+  const { id } = useParams();
+  const queryClient = useQueryClient();
+  const task = useQuery({
+    queryKey: ['task', id],
+    enabled: Boolean(id),
+    queryFn: async () => (await api.get<ApiOne<Task>>(`/tasks/${id}`)).data.data,
+  });
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['task', id] });
+    await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    await queryClient.invalidateQueries({ queryKey: ['kanban'] });
+    await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+  };
+  const archiveTask = useMutation({
+    mutationFn: async () => api.delete(`/tasks/${id}`),
+    onSuccess: invalidate,
+  });
+  const restoreTask = useMutation({
+    mutationFn: async () => api.patch(`/tasks/${id}/restore`),
+    onSuccess: invalidate,
+  });
+
+  if (!task.data) return <PageHeader title={t.taskDetail} />;
+
+  const data = task.data;
+  const detailRows = [
+    { label: t.status, value: <StatusBadge status={data.status} /> },
+    { label: t.priority, value: data.priority },
+    { label: t.dueDate, value: data.due_date ? new Date(data.due_date).toLocaleDateString('ko-KR') : '-' },
+    {
+      label: t.project,
+      value: data.project ? <Link to={`/projects/${data.project.id}`} className="font-semibold text-primary">{data.project.name}</Link> : t.noProject,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <PageHeader
+        title={data.title}
+        action={data.status === TaskStatus.ARCHIVED ? (
+          <Button variant="secondary" onClick={() => restoreTask.mutate()}>
+            <RotateCcw className="h-4 w-4" />
+            {t.restore}
+          </Button>
+        ) : (
+          <ConfirmAction
+            label={t.archive}
+            title={t.archiveConfirmTitle}
+            message={t.archiveTaskImpact}
+            icon={<Archive className="h-4 w-4" />}
+            onConfirm={() => archiveTask.mutate()}
+          />
+        )}
+      />
+      <section className="rounded-lg border border-border bg-background p-6">
+        <div className="grid grid-cols-2 gap-4">
+          {detailRows.map((row) => (
+            <div key={row.label} className="rounded-lg bg-surface p-3">
+              <div className="text-xs text-muted-foreground">{row.label}</div>
+              <div className="mt-1 text-sm font-semibold text-heading">{row.value}</div>
+            </div>
+          ))}
+        </div>
+        {data.description ? <p className="mt-4 whitespace-pre-wrap text-sm text-foreground">{data.description}</p> : null}
+      </section>
+      {data.source_inbox ? (
+        <section className="rounded-lg border border-border bg-background p-4">
+          <h2 className="text-[18px] font-semibold text-heading">{t.sourceInbox}</h2>
+          <p className="mt-2 text-sm text-foreground">{data.source_inbox.raw_content}</p>
+        </section>
+      ) : null}
+      <section className="rounded-lg border border-border bg-background p-4">
+        <h2 className="text-[18px] font-semibold text-heading">{t.relatedMeetingNotes}</h2>
+        {(data.meeting_notes ?? []).length === 0 ? <div className="mt-2 text-sm text-muted-foreground">{t.empty}</div> : null}
+        <div className="mt-3 space-y-2">
+          {(data.meeting_notes ?? []).map((note) => (
+            <Link key={note.id} to={`/projects/${note.project_id}/meeting-notes/${note.id}`} className="block rounded-lg bg-surface p-3 hover:bg-surface-2">
+              <div className="text-sm font-semibold text-heading">{note.title ?? t.meetingNotes}</div>
+              <div className="text-xs text-muted-foreground">{note.meeting_date ? new Date(note.meeting_date).toLocaleDateString('ko-KR') : '-'}</div>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };
@@ -771,7 +1277,7 @@ const TaskCreateForm = () => {
     <form onSubmit={(event) => { event.preventDefault(); if (form.title.trim()) mutation.mutate(); }} className="grid grid-cols-[1fr_180px_140px_140px_auto] gap-2">
       <Input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder={t.title} />
       <Select value={form.project_id} onChange={(event) => setForm({ ...form, project_id: event.target.value })}>
-        <option value="">No Project</option>
+        <option value="">{t.noProject}</option>
         {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
       </Select>
       <Select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value as Priority })}>
@@ -877,11 +1383,31 @@ const Settings = () => {
   const queryClient = useQueryClient();
   const settingsQuery = useSettings();
   const [template, setTemplate] = useState<string | null>(null);
+  const [resetConfirmation, setResetConfirmation] = useState('');
+  const [maintenanceSummary, setMaintenanceSummary] = useState<MaintenanceSummary | null>(null);
   const mutation = useMutation({
     mutationFn: async (data: Partial<UserSetting>) => api.patch('/settings', data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       await queryClient.invalidateQueries({ queryKey: ['kanban'] });
+    },
+  });
+  const invalidateWorkspace = async () => {
+    await queryClient.invalidateQueries();
+  };
+  const cleanupSamples = useMutation({
+    mutationFn: async () => (await api.post<ApiOne<MaintenanceSummary>>('/maintenance/cleanup-sample-data')).data.data,
+    onSuccess: async (summary) => {
+      setMaintenanceSummary(summary);
+      await invalidateWorkspace();
+    },
+  });
+  const resetWorkspace = useMutation({
+    mutationFn: async () => (await api.post<ApiOne<MaintenanceSummary>>('/maintenance/reset-workspace', { confirmation: resetConfirmation })).data.data,
+    onSuccess: async (summary) => {
+      setMaintenanceSummary(summary);
+      setResetConfirmation('');
+      await invalidateWorkspace();
     },
   });
 
@@ -914,8 +1440,8 @@ const Settings = () => {
       <PageHeader title={t.settings} />
 
       <section className="rounded-lg border border-border bg-background p-6">
-        <h2 className="text-[18px] font-semibold text-heading mb-4">Kanban ?쒖떆 ?ㅼ젙</h2>
-        <p className="text-sm text-muted-foreground mb-4">Dashboard??Kanban 蹂대뱶???쒖떆??而щ읆???좏깮?⑸땲?? 理쒖냼 1媛??댁긽 ?좏깮?댁빞 ?⑸땲??</p>
+        <h2 className="text-[18px] font-semibold text-heading mb-4">{t.kanbanDisplaySettings}</h2>
+        <p className="text-sm text-muted-foreground mb-4">{t.kanbanDisplayDescription}</p>
         <div className="space-y-3">
           {taskStatuses.map((status) => (
             <label key={status} className="flex items-center gap-3 cursor-pointer">
@@ -932,7 +1458,7 @@ const Settings = () => {
       </section>
 
       <section className="rounded-lg border border-border bg-background p-6">
-        <h2 className="text-[18px] font-semibold text-heading mb-4">?뚮쭏 ?ㅼ젙</h2>
+        <h2 className="text-[18px] font-semibold text-heading mb-4">{t.themeSettings}</h2>
         <div className="flex gap-4">
           {(['Light', 'Dark', 'System'] as ThemeType[]).map((theme) => (
             <button
@@ -948,13 +1474,53 @@ const Settings = () => {
       </section>
 
       <section className="rounded-lg border border-border bg-background p-6 space-y-4">
-        <h2 className="text-[18px] font-semibold text-heading mb-4">?뚯쓽濡??쒗뵆由??ㅼ젙</h2>
-        <p className="text-sm text-muted-foreground mb-4">???뚯쓽濡??묒꽦 ??湲곕낯?쇰줈 梨꾩썙吏?HTML/Markdown 肄섑뀗痢좊? ?ㅼ젙?⑸땲??</p>
+        <h2 className="text-[18px] font-semibold text-heading mb-4">{t.meetingTemplateSettings}</h2>
+        <p className="text-sm text-muted-foreground mb-4">{t.meetingTemplateDescription}</p>
         <MeetingNoteEditor
           initialContent={templateValue}
           onChange={setTemplate}
         />
         <Button onClick={saveTemplate}>{t.save}</Button>
+      </section>
+      <section className="space-y-4 rounded-lg border border-border bg-background p-6">
+        <h2 className="text-[18px] font-semibold text-heading">{t.dataManagement}</h2>
+        <div className="rounded-lg bg-surface p-4">
+          <div className="font-semibold text-heading">{t.sampleDataCleanup}</div>
+          <p className="mt-1 text-sm text-muted-foreground">{t.sampleDataCleanupDescription}</p>
+          <ConfirmAction
+            label={t.sampleDataCleanup}
+            title={t.deleteConfirmTitle}
+            message={t.sampleDataCleanupDescription}
+            icon={<Trash2 className="h-4 w-4" />}
+            variant="danger"
+            disabled={cleanupSamples.isPending}
+            onConfirm={() => cleanupSamples.mutate()}
+          />
+        </div>
+        <div className="rounded-lg border border-danger/20 bg-background p-4">
+          <div className="font-semibold text-heading">{t.resetWorkspace}</div>
+          <p className="mt-1 text-sm text-muted-foreground">{t.resetWorkspaceDescription}</p>
+          <div className="mt-3 flex gap-2">
+            <Input value={resetConfirmation} onChange={(event) => setResetConfirmation(event.target.value)} placeholder={t.resetConfirmationPlaceholder} />
+            <ConfirmAction
+              label={t.resetWorkspace}
+              title={t.resetConfirmTitle}
+              message={t.resetWorkspaceDescription}
+              icon={<Trash2 className="h-4 w-4" />}
+              variant="danger"
+              disabled={resetConfirmation !== 'RESET WORKSPACE' || resetWorkspace.isPending}
+              onConfirm={() => resetWorkspace.mutate()}
+            />
+          </div>
+        </div>
+        {maintenanceSummary ? (
+          <div className="rounded-lg bg-surface p-3 text-sm text-muted-foreground">
+            <div className="font-semibold text-heading">{t.lastAction}</div>
+            <div className="mt-1">
+              Projects {maintenanceSummary.projects}, Tasks {maintenanceSummary.tasks}, Inbox {maintenanceSummary.inbox_items}, Notes {maintenanceSummary.meeting_notes}, Links {maintenanceSummary.links}, Decisions {maintenanceSummary.decisions}, Tags {maintenanceSummary.tags}
+            </div>
+          </div>
+        ) : null}
       </section>
     </div>
   );
@@ -967,13 +1533,20 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   React.useEffect(() => {
     if (!theme) return;
     const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      root.classList.remove('light', 'dark');
+      if (theme === 'System') {
+        root.classList.add(media.matches ? 'dark' : 'light');
+      } else {
+        root.classList.add(theme.toLowerCase());
+      }
+    };
 
-    root.classList.remove('light', 'dark');
+    applyTheme();
     if (theme === 'System') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme.toLowerCase());
+      media.addEventListener('change', applyTheme);
+      return () => media.removeEventListener('change', applyTheme);
     }
   }, [theme]);
 
@@ -993,7 +1566,7 @@ function App() {
             <Route path="/projects/:projectId/meeting-notes" element={<ProjectMeetingNotesPage />} />
             <Route path="/projects/:projectId/meeting-notes/:noteId" element={<ProjectMeetingNoteDetailPage />} />
             <Route path="/tasks" element={<Tasks />} />
-            <Route path="/tasks/:id" element={<Tasks />} />
+            <Route path="/tasks/:id" element={<TaskDetail />} />
             <Route path="/kanban" element={<KanbanBoard />} />
             <Route path="/decisions" element={<Placeholder title={t.decisions} />} />
             <Route path="/search" element={<Placeholder title={t.search} />} />

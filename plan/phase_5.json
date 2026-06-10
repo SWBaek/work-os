@@ -160,6 +160,7 @@
     }
   ],
   "notes": [
+    "Phase 4의 Search가 완료된 뒤 Decisions를 구현한다. Project Overview와 Task detail에서 관련 Decision을 바로 볼 수 있도록 연결 요구사항을 포함한다.",
     "Decision 자동 추출(회의록에서 LLM으로 추출)은 MVP 제외, v2 이후 검토 사항이다.",
     "Decision의 source_type은 Meeting, Email, Verbal, Other로 어디에서 결정이 이루어졌는지를 추적한다.",
     "타임라인 UI는 세로형 타임라인이 가장 직관적이며, 날짜 구분선으로 시간 흐름을 명확히 표현한다."

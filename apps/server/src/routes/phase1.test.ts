@@ -55,6 +55,12 @@ describe('Phase 1 core workflow API', () => {
       .expect(201);
     created.tasks.push(secondConvert.body.data.task.id as string);
 
+    const defaultInbox = await request(app).get('/api/v1/inbox').expect(200);
+    expect(defaultInbox.body.data.some((item: { id: string }) => item.id === inboxId)).toBe(false);
+
+    const convertedInbox = await request(app).get('/api/v1/inbox?status=Converted').expect(200);
+    expect(convertedInbox.body.data.some((item: { id: string }) => item.id === inboxId)).toBe(true);
+
     const directTask = await request(app)
       .post('/api/v1/tasks')
       .send({ title: 'Direct task', project_id: projectId, priority: Priority.CRITICAL })

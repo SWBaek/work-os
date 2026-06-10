@@ -14,13 +14,15 @@ export type Project = {
   meeting_notes?: MeetingNoteSummary[];
   _count?: { tasks: number; links: number; inbox_items: number };
 };
-export type ProjectLink = { id: string; title?: string | null; url_or_path: string; type: string; description?: string | null; tags: Tag[] };
+export type ProjectLink = { id: string; title?: string | null; url_or_path: string; type: string; description?: string | null; deleted_at?: string | null; tags: Tag[] };
 export type MeetingNoteSummary = {
   id: string;
+  project_id?: string;
   title?: string | null;
   meeting_date?: string | null;
   attendees?: string | null;
   tags?: Tag[];
+  deleted_at?: string | null;
 };
 export type MeetingNote = MeetingNoteSummary & {
   project_id: string;
@@ -42,11 +44,13 @@ export type Task = {
   id: string;
   title: string;
   description?: string | null;
+  source_action_key?: string | null;
   status: TaskStatus;
   priority: Priority;
   due_date?: string | null;
   project?: { id: string; name: string } | null;
   source_inbox?: { id: string; raw_content: string } | null;
+  meeting_notes?: MeetingNoteSummary[];
   tags: Tag[];
   overdue?: boolean;
 };
@@ -63,4 +67,15 @@ export type UserSetting = {
   default_project_filter?: string | null;
   theme: ThemeType;
   meeting_note_template?: string | null;
+};
+
+export type MaintenanceSummary = {
+  projects: number;
+  tasks: number;
+  inbox_items: number;
+  meeting_notes: number;
+  links: number;
+  decisions: number;
+  tags: number;
+  audit_logs?: number;
 };

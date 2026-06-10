@@ -207,6 +207,7 @@
     }
   ],
   "notes": [
+    "로컬 SQLite 신뢰 문제 때문에 JSON Export와 수동 백업은 Phase 4 직후 또는 Phase 5 전으로 당길 수 있다.",
     "이 Phase는 계획서에서 E11(Backup & Restore)과 E10(Settings)에 해당하며, 원래 Phase에는 명시적으로 분리되지 않았으나 데이터 안전성은 핵심 요구사항이므로 별도 Phase로 분리함.",
     "SQLite 백업 시 반드시 PRAGMA wal_checkpoint(TRUNCATE) 후 파일 복사하거나, SQLite Online Backup API를 사용해야 한다.",
     "계획서 22장의 '사용자가 백업을 잊고 외장 저장 안 함' 위험에 대응하여, UI에 마지막 외부 백업 경고를 표시하는 기능을 추가함.",

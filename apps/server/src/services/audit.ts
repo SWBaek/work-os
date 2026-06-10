@@ -3,7 +3,7 @@ import prisma from '../utils/prisma';
 export const recordAudit = async (
   entityType: string,
   entityId: string,
-  action: 'Create' | 'Update' | 'Delete',
+  action: 'Create' | 'Update' | 'Delete' | 'Restore',
   changedFields: Record<string, unknown>,
 ) => {
   await prisma.auditLog.create({

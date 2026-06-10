@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import type { Prisma } from '@prisma/client';
+import { createHash } from 'node:crypto';
+import MarkdownIt from 'markdown-it';
+import sanitizeHtml from 'sanitize-html';
 import { InboxStatus, LinkType, Priority, ProjectStatus, SourceType, TaskStatus } from 'shared';
 import {
   ConvertInboxItemSchema,
@@ -19,6 +22,8 @@ import {
   KanbanQuerySchema,
   CreateMeetingNoteSchema,
   UpdateMeetingNoteSchema,
+  DeletedQuerySchema,
+  ResetWorkspaceSchema,
 } from 'shared';
 import { recordAudit } from '../services/audit';
 import { connectOrCreateTags, setTags, tagInclude } from '../services/tags';
@@ -31,6 +36,7 @@ const router = Router();
 const taskInclude = {
   project: { select: { id: true, name: true } },
   source_inbox: { select: { id: true, raw_content: true } },
+  meeting_notes: { select: { id: true, title: true, meeting_date: true, project_id: true } },
   tags: tagInclude,
 };
 
@@ -87,57 +93,53 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-const renderInlineMarkdown = (value: string) =>
-  escapeHtml(value)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+const markdownRenderer = new MarkdownIt({
+  html: false,
+  linkify: true,
+});
 
-const renderMarkdown = (markdown: string) => {
-  const lines = markdown.replace(/\r\n/g, '\n').split('\n');
-  const html: string[] = [];
-  let inList = false;
+const renderMarkdown = (markdown: string) =>
+  sanitizeHtml(markdownRenderer.render(markdown), {
+    allowedTags: [
+      'a',
+      'blockquote',
+      'br',
+      'code',
+      'em',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'hr',
+      'li',
+      'ol',
+      'p',
+      'pre',
+      's',
+      'strong',
+      'table',
+      'tbody',
+      'td',
+      'th',
+      'thead',
+      'tr',
+      'ul',
+    ],
+    allowedAttributes: {
+      a: ['href', 'name', 'target', 'rel'],
+      code: ['class'],
+      td: ['align'],
+      th: ['align'],
+    },
+    allowedSchemes: ['http', 'https', 'mailto', 'file'],
+  });
 
-  const closeList = () => {
-    if (inList) {
-      html.push('</ul>');
-      inList = false;
-    }
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      closeList();
-      continue;
-    }
-
-    const heading = /^(#{1,3})\s+(.+)$/.exec(trimmed);
-    if (heading) {
-      closeList();
-      const level = heading[1].length;
-      html.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
-      continue;
-    }
-
-    const listItem = /^[-*]\s+(\[[ xX]\]\s+)?(.+)$/.exec(trimmed);
-    if (listItem) {
-      if (!inList) {
-        html.push('<ul>');
-        inList = true;
-      }
-      const checked = listItem[1]?.toLowerCase().includes('x') ?? false;
-      const checkbox = listItem[1] ? `<input type="checkbox" disabled${checked ? ' checked' : ''}> ` : '';
-      html.push(`<li>${checkbox}${renderInlineMarkdown(listItem[2])}</li>`);
-      continue;
-    }
-
-    closeList();
-    html.push(`<p>${renderInlineMarkdown(trimmed)}</p>`);
-  }
-
-  closeList();
-  return html.join('\n');
+const createActionItemKey = (noteId: string, actionItemText: string) => {
+  const normalized = actionItemText.trim().replace(/\s+/g, ' ').toLowerCase();
+  const hash = createHash('sha256').update(`${noteId}:${normalized}`).digest('hex').slice(0, 24);
+  return `meeting:${noteId}:action:${hash}`;
 };
 
 const renderMeetingNoteExport = (note: { title: string | null; meeting_date: Date | null; attendees: string | null; markdown_content: string }) => {
@@ -151,7 +153,10 @@ const renderMeetingNoteExport = (note: { title: string | null; meeting_date: Dat
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#262626;background:#fff;line-height:1.6;margin:40px auto;max-width:840px;padding:0 24px}
 h1{font-size:28px;line-height:1.3;margin:0 0 8px}h2{font-size:22px;margin-top:32px}h3{font-size:18px;margin-top:24px}
 .meta{color:#6B6B6B;font-size:13px;margin-bottom:32px}code{background:#F5F5F5;border-radius:6px;padding:2px 5px}
-ul{padding-left:22px}li{margin:6px 0}input{margin-right:8px}
+pre{background:#F5F5F5;border-radius:8px;padding:12px;overflow:auto}pre code{background:transparent;padding:0}
+blockquote{border-left:4px solid #E5E5E5;margin:16px 0;padding-left:16px;color:#404040}
+table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #E5E5E5;padding:8px;text-align:left}
+ul,ol{padding-left:22px}li{margin:6px 0}
 </style>
 </head>
 <body>
@@ -173,9 +178,127 @@ const parseDashboardStatuses = (value: string): TaskStatus[] => {
   }
 };
 
+const seedTagNames = ['Urgent', 'Bug', 'Feature', 'Documentation', 'Meeting', 'Planning', 'Design', 'Development', 'Testing', 'Deployment'];
+
+const cleanupSampleData = async (tx: Prisma.TransactionClient) => {
+  const sampleProjects = await tx.project.findMany({
+    where: { name: { in: Array.from({ length: 5 }, (_, index) => `Project ${index + 1}`) } },
+    select: { id: true },
+  });
+  const sampleProjectIds = sampleProjects.map((project) => project.id);
+  const sampleDecisionIds = await tx.decision.findMany({
+    where: {
+      OR: [
+        { title: { in: Array.from({ length: 5 }, (_, index) => `Decision ${index + 1}`) } },
+        { project_id: { in: sampleProjectIds } },
+      ],
+    },
+    select: { id: true },
+  });
+  const sampleMeetingNoteIds = await tx.meetingNote.findMany({
+    where: {
+      OR: [
+        { title: { in: Array.from({ length: 10 }, (_, index) => `Meeting Note ${index + 1}`) } },
+        { project_id: { in: sampleProjectIds } },
+      ],
+    },
+    select: { id: true },
+  });
+  const sampleTaskIds = await tx.task.findMany({
+    where: {
+      OR: [
+        { title: { in: Array.from({ length: 50 }, (_, index) => `Task ${index + 1}`) } },
+        { project_id: { in: sampleProjectIds } },
+      ],
+    },
+    select: { id: true },
+  });
+  const sampleInboxIds = await tx.inboxItem.findMany({
+    where: { raw_content: { in: Array.from({ length: 20 }, (_, index) => `Inbox item raw content ${index + 1}`) } },
+    select: { id: true },
+  });
+  const sampleLinkIds = await tx.projectLink.findMany({
+    where: {
+      OR: [
+        { title: { in: Array.from({ length: 15 }, (_, index) => `Link ${index + 1}`) } },
+        { project_id: { in: sampleProjectIds } },
+      ],
+    },
+    select: { id: true },
+  });
+
+  const decisionIds = sampleDecisionIds.map((item) => item.id);
+  const meetingNoteIds = sampleMeetingNoteIds.map((item) => item.id);
+  const taskIds = sampleTaskIds.map((item) => item.id);
+  const inboxIds = sampleInboxIds.map((item) => item.id);
+  const linkIds = sampleLinkIds.map((item) => item.id);
+
+  const links = await tx.projectLink.deleteMany({ where: { id: { in: linkIds } } });
+  const decisions = await tx.decision.deleteMany({ where: { id: { in: decisionIds } } });
+  const meetingNotes = await tx.meetingNote.deleteMany({ where: { id: { in: meetingNoteIds } } });
+  const tasks = await tx.task.deleteMany({ where: { id: { in: taskIds } } });
+  const inboxItems = await tx.inboxItem.deleteMany({ where: { id: { in: inboxIds } } });
+  const projects = await tx.project.deleteMany({ where: { id: { in: sampleProjectIds } } });
+  const tags = await tx.tag.deleteMany({
+    where: {
+      name: { in: seedTagNames },
+      projects: { none: {} },
+      links: { none: {} },
+      inbox_items: { none: {} },
+      tasks: { none: {} },
+      notes: { none: {} },
+      decisions: { none: {} },
+    },
+  });
+
+  return {
+    projects: projects.count,
+    tasks: tasks.count,
+    inbox_items: inboxItems.count,
+    meeting_notes: meetingNotes.count,
+    links: links.count,
+    decisions: decisions.count,
+    tags: tags.count,
+  };
+};
+
+const resetWorkspaceData = async (tx: Prisma.TransactionClient) => {
+  const links = await tx.projectLink.deleteMany();
+  const decisions = await tx.decision.deleteMany();
+  const meetingNotes = await tx.meetingNote.deleteMany();
+  const tasks = await tx.task.deleteMany();
+  const inboxItems = await tx.inboxItem.deleteMany();
+  const projects = await tx.project.deleteMany();
+  const tags = await tx.tag.deleteMany();
+  const auditLogs = await tx.auditLog.deleteMany();
+  return {
+    projects: projects.count,
+    tasks: tasks.count,
+    inbox_items: inboxItems.count,
+    meeting_notes: meetingNotes.count,
+    links: links.count,
+    decisions: decisions.count,
+    tags: tags.count,
+    audit_logs: auditLogs.count,
+  };
+};
+
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+router.post('/maintenance/cleanup-sample-data', asyncHandler(async (_req, res) => {
+  const summary = await prisma.$transaction(async (tx) => cleanupSampleData(tx));
+  await recordAudit('Maintenance', 'sample-data', 'Delete', summary);
+  res.json({ data: summary });
+}));
+
+router.post('/maintenance/reset-workspace', asyncHandler(async (req, res) => {
+  parseBody(ResetWorkspaceSchema, req.body);
+  const summary = await prisma.$transaction(async (tx) => resetWorkspaceData(tx));
+  await recordAudit('Maintenance', 'workspace', 'Delete', summary);
+  res.json({ data: summary });
+}));
 
 router.get('/dashboard/summary', asyncHandler(async (_req, res) => {
   const now = new Date();
@@ -217,7 +340,7 @@ router.get('/projects', asyncHandler(async (req, res) => {
   const query = parseQuery(ProjectListQuerySchema, req.query);
 
   const where = {
-    ...(query.status ? { status: query.status } : {}),
+    ...(query.status ? { status: query.status } : { status: { not: ProjectStatus.ARCHIVED } }),
     ...(query.tag ? { tags: { some: { name: query.tag } } } : {}),
   };
 
@@ -258,10 +381,10 @@ router.get('/projects/:id', asyncHandler(async (req, res) => {
     where: { id: routeParam(req.params.id, 'id') },
     include: {
       ...projectInclude,
-      links: { include: { tags: tagInclude }, orderBy: { updated_at: 'desc' } },
-      tasks: { include: taskInclude, orderBy: { updated_at: 'desc' } },
-      meeting_notes: { select: { id: true, title: true, meeting_date: true }, orderBy: { meeting_date: 'desc' }, take: 3 },
-      decisions: { select: { id: true, title: true, content: true, decision_date: true }, orderBy: { decision_date: 'desc' }, take: 3 },
+      links: { where: { deleted_at: null }, include: { tags: tagInclude }, orderBy: { updated_at: 'desc' } },
+      tasks: { where: { status: { not: TaskStatus.ARCHIVED } }, include: taskInclude, orderBy: { updated_at: 'desc' } },
+      meeting_notes: { where: { deleted_at: null }, select: { id: true, title: true, meeting_date: true }, orderBy: { meeting_date: 'desc' }, take: 3 },
+      decisions: { where: { deleted_at: null }, select: { id: true, title: true, content: true, decision_date: true }, orderBy: { decision_date: 'desc' }, take: 3 },
     },
   });
   if (!project) {
@@ -302,9 +425,23 @@ router.delete('/projects/:id', asyncHandler(async (req, res) => {
   res.json({ data: project });
 }));
 
+router.patch('/projects/:id/restore', asyncHandler(async (req, res) => {
+  const project = await prisma.project.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: { status: ProjectStatus.ACTIVE },
+    include: projectInclude,
+  });
+  await recordAudit('Project', project.id, 'Restore', { status: ProjectStatus.ACTIVE });
+  res.json({ data: project });
+}));
+
 router.get('/projects/:id/links', asyncHandler(async (req, res) => {
+  const query = parseQuery(DeletedQuerySchema, req.query);
   const links = await prisma.projectLink.findMany({
-    where: { project_id: routeParam(req.params.id, 'id') },
+    where: {
+      project_id: routeParam(req.params.id, 'id'),
+      deleted_at: query.deleted === 'true' ? { not: null } : null,
+    },
     include: { tags: tagInclude },
     orderBy: { updated_at: 'desc' },
   });
@@ -347,8 +484,22 @@ router.patch('/project-links/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/project-links/:id', asyncHandler(async (req, res) => {
-  const link = await prisma.projectLink.delete({ where: { id: routeParam(req.params.id, 'id') } });
-  await recordAudit('ProjectLink', link.id, 'Delete', {});
+  const link = await prisma.projectLink.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: { deleted_at: new Date() },
+    include: { tags: tagInclude },
+  });
+  await recordAudit('ProjectLink', link.id, 'Delete', { deleted_at: link.deleted_at });
+  res.json({ data: link });
+}));
+
+router.patch('/project-links/:id/restore', asyncHandler(async (req, res) => {
+  const link = await prisma.projectLink.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: { deleted_at: null },
+    include: { tags: tagInclude },
+  });
+  await recordAudit('ProjectLink', link.id, 'Restore', { deleted_at: null });
   res.json({ data: link });
 }));
 
@@ -358,7 +509,7 @@ router.get('/inbox', asyncHandler(async (req, res) => {
   const query = parseQuery(InboxListQuerySchema, req.query);
   const where = {
     ...(query.project_id ? { project_id: query.project_id } : {}),
-    ...(query.status ? { status: query.status } : {}),
+    status: query.status ?? InboxStatus.UNPROCESSED,
     ...(query.tag ? { tags: { some: { name: query.tag } } } : {}),
   };
 
@@ -428,6 +579,16 @@ router.delete('/inbox/:id', asyncHandler(async (req, res) => {
   res.json({ data: item });
 }));
 
+router.patch('/inbox/:id/restore', asyncHandler(async (req, res) => {
+  const item = await prisma.inboxItem.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: { status: InboxStatus.UNPROCESSED },
+    include: inboxInclude,
+  });
+  await recordAudit('InboxItem', item.id, 'Restore', { status: InboxStatus.UNPROCESSED });
+  res.json({ data: item });
+}));
+
 router.post('/inbox/:id/convert', asyncHandler(async (req, res) => {
   const body = parseBody(ConvertInboxItemSchema, req.body);
   const inbox = await prisma.inboxItem.findUnique({ where: { id: routeParam(req.params.id, 'id') } });
@@ -472,7 +633,7 @@ router.get('/tasks', asyncHandler(async (req, res) => {
 
   const where = {
     ...(query.project_id ? { project_id: query.project_id } : {}),
-    ...(query.status ? { status: query.status } : {}),
+    ...(query.status ? { status: query.status } : { status: { not: TaskStatus.ARCHIVED } }),
     ...(query.priority ? { priority: query.priority } : {}),
     ...(query.dashboard === 'today' ? { due_date: { gte: startOfToday, lte: endOfToday }, status: { notIn: [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.CANCELED] } } : {}),
     ...(query.dashboard === 'overdue' ? { due_date: { lt: startOfToday }, status: { notIn: [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.CANCELED] } } : {}),
@@ -564,12 +725,30 @@ router.patch('/tasks/:id/status', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/tasks/:id', asyncHandler(async (req, res) => {
+  const existing = await prisma.task.findUnique({ where: { id: routeParam(req.params.id, 'id') } });
+  if (!existing) {
+    throw new HttpError(404, 'TASK_NOT_FOUND', 'Task not found');
+  }
   const task = await prisma.task.update({
     where: { id: routeParam(req.params.id, 'id') },
-    data: applyTaskStatus(TaskStatus.OPEN, TaskStatus.ARCHIVED),
+    data: existing.status === TaskStatus.ARCHIVED ? {} : applyTaskStatus(existing.status, TaskStatus.ARCHIVED),
     include: taskInclude,
   });
   await recordAudit('Task', task.id, 'Delete', { status: TaskStatus.ARCHIVED });
+  res.json({ data: task });
+}));
+
+router.patch('/tasks/:id/restore', asyncHandler(async (req, res) => {
+  const existing = await prisma.task.findUnique({ where: { id: routeParam(req.params.id, 'id') } });
+  if (!existing) {
+    throw new HttpError(404, 'TASK_NOT_FOUND', 'Task not found');
+  }
+  const task = await prisma.task.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: existing.status === TaskStatus.OPEN ? {} : applyTaskStatus(existing.status, TaskStatus.OPEN),
+    include: taskInclude,
+  });
+  await recordAudit('Task', task.id, 'Restore', { status: TaskStatus.OPEN });
   res.json({ data: task });
 }));
 
@@ -578,13 +757,14 @@ router.get('/kanban', asyncHandler(async (req, res) => {
   const where = {
     ...(query.scope === 'project' && query.project_id ? { project_id: query.project_id } : {}),
     ...(query.scope === 'sub_project' && query.sub_project_id ? { sub_project_id: query.sub_project_id } : {}),
+    status: { not: TaskStatus.ARCHIVED },
   };
   const tasks = await prisma.task.findMany({
     where,
     include: taskInclude,
     orderBy: [{ status: 'asc' }, { due_date: 'asc' }, { updated_at: 'desc' }],
   });
-  const data = kanbanStatuses.map((status) => ({
+  const data = kanbanStatuses.filter((status) => status !== TaskStatus.ARCHIVED).map((status) => ({
     status,
     tasks: tasks.filter((task) => task.status === status).map((task) => ({
       ...task,
@@ -654,8 +834,12 @@ router.patch('/settings', asyncHandler(async (req, res) => {
 }));
 
 router.get('/projects/:id/meeting-notes', asyncHandler(async (req, res) => {
+  const query = parseQuery(DeletedQuerySchema, req.query);
   const notes = await prisma.meetingNote.findMany({
-    where: { project_id: routeParam(req.params.id, 'id') },
+    where: {
+      project_id: routeParam(req.params.id, 'id'),
+      deleted_at: query.deleted === 'true' ? { not: null } : null,
+    },
     include: { tags: tagInclude },
     orderBy: { meeting_date: 'desc' },
   });
@@ -721,11 +905,21 @@ router.post('/meeting-notes/:id/action-items/tasks', asyncHandler(async (req, re
   if (!note) {
     throw new HttpError(404, 'MEETING_NOTE_NOT_FOUND', 'Meeting note not found');
   }
+  const actionItemKey = body.action_item_key ?? createActionItemKey(note.id, body.action_item_text);
+  const existingTask = await prisma.task.findUnique({
+    where: { source_action_key: actionItemKey },
+    include: taskInclude,
+  });
+  if (existingTask) {
+    res.json({ data: existingTask });
+    return;
+  }
 
   const task = await prisma.task.create({
     data: {
       title: body.action_item_text,
       description: `Created from meeting note: ${note.title ?? note.id}`,
+      source_action_key: actionItemKey,
       project_id: body.project_id ?? note.project_id,
       status: TaskStatus.OPEN,
       priority: body.priority ?? Priority.MEDIUM,
@@ -760,10 +954,22 @@ router.patch('/meeting-notes/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/meeting-notes/:id', asyncHandler(async (req, res) => {
-  const note = await prisma.meetingNote.delete({
+  const note = await prisma.meetingNote.update({
     where: { id: routeParam(req.params.id, 'id') },
+    data: { deleted_at: new Date() },
+    include: { tags: tagInclude },
   });
-  await recordAudit('MeetingNote', note.id, 'Delete', {});
+  await recordAudit('MeetingNote', note.id, 'Delete', { deleted_at: note.deleted_at });
+  res.json({ data: note });
+}));
+
+router.patch('/meeting-notes/:id/restore', asyncHandler(async (req, res) => {
+  const note = await prisma.meetingNote.update({
+    where: { id: routeParam(req.params.id, 'id') },
+    data: { deleted_at: null },
+    include: { tags: tagInclude },
+  });
+  await recordAudit('MeetingNote', note.id, 'Restore', { deleted_at: null });
   res.json({ data: note });
 }));
 

@@ -9,20 +9,18 @@ export const PageHeader = ({ title, action }: { title: string; action?: React.Re
   </div>
 );
 
-export const Button = ({ children, onClick, type = 'button', variant = 'primary', disabled }: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  type?: 'button' | 'submit';
-  variant?: 'primary' | 'secondary' | 'ghost';
-  disabled?: boolean;
+export const Button = ({ children, type = 'button', variant = 'primary', className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
 }) => {
   const classes = variant === 'primary'
     ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
     : variant === 'secondary'
       ? 'border border-border bg-background text-heading hover:bg-surface-2'
-      : 'text-muted-foreground hover:bg-surface-2';
+      : variant === 'danger'
+        ? 'bg-danger text-white hover:bg-danger/90'
+        : 'text-muted-foreground hover:bg-surface-2';
   return (
-    <button type={type} disabled={disabled} onClick={onClick} className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors disabled:opacity-50 ${classes}`}>
+    <button type={type} {...props} className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors disabled:opacity-50 ${classes} ${className}`}>
       {children}
     </button>
   );
