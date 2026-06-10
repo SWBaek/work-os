@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                String    @id @default(uuid())
+  name              String
+  description       String?
+  parent_project_id String?
+  parent_project    Project?  @relation("SubProjects", fields: [parent_project_id], references: [id])
+  sub_projects      Project[] @relation("SubProjects")
+  status            String    // Active, On Hold, Done, Archived
+  tags              Tag[]     @relation("ProjectTags")
+  links             ProjectLink[]
+  inbox_items       InboxItem[]
+  tasks             Task[]
+  meeting_notes     MeetingNote[]
+  decisions         Decision[]
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}
+
+model ProjectLink {
+  id          String   @id @default(uuid())
+  project_id  String
+  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  title       String?
+  url_or_path String
+  type        String   // GitLab, Jira, SharePoint, Confluence, Teams, LocalFile, Other
+  description String?
+  tags        Tag[]    @relation("ProjectLinkTags")
+  tasks       Task[]   @relation("TaskLinks")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model InboxItem {
+  id                 String   @id @default(uuid())
+  source_type        String   // Teams, Email, Jira, Verbal, Phone, Other
+  source_detail      String?
+  raw_content        String
+  project_id         String?
+  project            Project? @relation(fields: [project_id], references: [id])
+  due_date           DateTime?
+  captured_at        DateTime @default(now())
+  status             String   // Unprocessed, Converted, Archived, Canceled
+  tags               Tag[]    @relation("InboxTags")
+  converted_tasks    Task[]   @relation("InboxTask")
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([status, captured_at])
+}
+
+model Task {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  project_id      String?
+  project         Project? @relation(fields: [project_id], references: [id])
+  sub_project_id  String?
+  source_inbox_id String?
+  source_inbox    InboxItem? @relation("InboxTask", fields: [source_inbox_id], references: [id])
+  status          String   // Inbox, Open, In Progress, Waiting, Hold, Done, Archived, Canceled
+  priority        String   // Critical, High, Medium, Low
+  due_date        DateTime?
+  tags            Tag[]    @relation("TaskTags")
+  related_links   ProjectLink[] @relation("TaskLinks")
+  meeting_notes   MeetingNote[] @relation("MeetingNoteTasks")
+  decisions       Decision[]    @relation("DecisionFollowUpTasks")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  completed_at    DateTime?
+  archived_at     DateTime?
+  canceled_at     DateTime?
+
+  @@index([project_id, status])
+  @@index([due_date])
+}
+
+model MeetingNote {
+  id              String   @id @default(uuid())
+  project_id      String
+  project         Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  title           String?
+  meeting_date    DateTime?
+  attendees       String?
+  markdown_content String
+  html_content    String?
+  tags            Tag[]    @relation("MeetingNoteTags")
+  related_tasks   Task[]   @relation("MeetingNoteTasks")
+  decisions       Decision[] @relation("MeetingNoteDecisions")
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([project_id, meeting_date])
+}
+
+model Decision {
+  id               String   @id @default(uuid())
+  project_id       String
+  project          Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  meeting_note_id  String?
+  title            String?
+  content          String
+  reason           String?
+  decided_by       String?
+  decision_date    DateTime?
+  source_type      String   // Meeting, Email, Verbal, Other
+  source_link      String?
+  impact           String?
+  follow_up_tasks  Task[]   @relation("DecisionFollowUpTasks")
+  meeting_notes    MeetingNote[] @relation("MeetingNoteDecisions")
+  tags             Tag[]    @relation("DecisionTags")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([project_id, decision_date])
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  color       String?  
+  description String?
+  projects    Project[] @relation("ProjectTags")
+  links       ProjectLink[] @relation("ProjectLinkTags")
+  inbox_items InboxItem[] @relation("InboxTags")
+  tasks       Task[]   @relation("TaskTags")
+  notes       MeetingNote[] @relation("MeetingNoteTags")
+  decisions   Decision[] @relation("DecisionTags")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model UserSetting {
+  id                         Int      @id @default(1)
+  dashboard_visible_statuses String   // JSON string
+  default_kanban_view        String   // All, Project
+  default_project_filter     String?
+  theme                      String   // Light, Dark, System
+  meeting_note_template      String?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  entity_type    String
+  entity_id      String
+  action         String   // Create, Update, Delete
+  changed_fields String   // JSON string
+  timestamp      DateTime @default(now())
+}

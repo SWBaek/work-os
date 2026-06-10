@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorksOS Phase Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <style>
+    :root {
+      /* Dark Theme (Default) */
+      --bg-base: #0f0f11;
+      --bg-surface: #18181c;
+      --bg-surface-hover: #222228;
+      --border-color: #27272a;
+      --text-main: #f4f4f5;
+      --text-muted: #a1a1aa;
+      
+      /* Status Colors */
+      --color-completed: #10b981;
+      --color-inprogress: #A50034; /* LG Red */
+      --color-inprogress-soft: rgba(165, 0, 52, 0.12);
+      --color-notstarted: #71717a;
+      --color-blocked: #f59e0b;
+      --color-skipped: #6b7280;
+      
+      --radius-lg: 10px;
+      --radius-md: 6px;
+      --font-sans: 'Pretendard', -apple-system, sans-serif;
+    }
+
+    body.light-theme {
+      /* Light Theme overrides */
+      --bg-base: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-surface-hover: #f4f4f5;
+      --border-color: #e4e4e7;
+      --text-main: #18181b;
+      --text-muted: #71717a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo {
+      background-color: var(--color-inprogress);
+      color: #ffffff;
+      font-weight: 800;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .theme-toggle {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--bg-surface-hover);
+    }
+
+    /* Total Stats */
+    .stats-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .progress-container {
+      grid-column: span 2;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .progress-bar-bg {
+      background-color: var(--bg-base);
+      border: 1px solid var(--border-color);
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      background-color: var(--color-completed);
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.5s ease-out;
+    }
+
+    /* Dropzone area */
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      background-color: var(--bg-surface);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--color-inprogress);
+      background-color: var(--bg-surface-hover);
+    }
+
+    /* Timeline Map */
+    .timeline-map {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.75rem;
+    }
+
+    .timeline-step {
+      flex: 1;
+      min-width: 140px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .timeline-step:hover {
+      background-color: var(--bg-surface-hover);
+    }
+
+    .timeline-step.active-step {
+      border-color: var(--color-inprogress);
+    }
+
+    .step-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .step-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .step-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      align-self: flex-start;
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+    }
+
+    /* Grid of Cards */
+    .phases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .phase-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .phase-card.inprogress-border {
+      border-color: var(--color-inprogress);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .card-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .card-phase-num {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--color-inprogress);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .badge-completed { background-color: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .badge-inprogress { background-color: var(--color-inprogress-soft); color: var(--color-inprogress); }
+    .badge-notstarted { background-color: rgba(113, 113, 122, 0.15); color: var(--text-muted); }
+    .badge-blocked { background-color: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .badge-skipped { background-color: rgba(107, 114, 128, 0.15); color: #6b7280; }
+
+    .card-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      min-height: 48px;
+    }
+
+    .card-progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .progress-text-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Tasks list */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .task-item {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .task-header {
+      background-color: var(--bg-base);
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .task-header:hover {
+      background-color: var(--bg-surface-hover);
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .task-bullet {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .bullet-completed { background-color: var(--color-completed); }
+    .bullet-inprogress { background-color: var(--color-inprogress); }
+    .bullet-notstarted { background-color: var(--color-notstarted); }
+    .bullet-blocked { background-color: var(--color-blocked); }
+    .bullet-skipped { background-color: var(--color-skipped); }
+
+    .task-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-status-text {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+
+    .task-content {
+      padding: 1rem;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .task-content.show {
+      display: flex;
+    }
+
+    .task-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .subtasks-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .subtask-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding-left: 0.25rem;
+    }
+
+    .subtask-item {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .subtask-bullet {
+      width: 4px;
+      height: 4px;
+      background-color: var(--text-muted);
+      border-radius: 50%;
+    }
+
+    @media (max-width: 768px) {
+      .phases-grid {
+        grid-template-columns: 1fr;
+      }
+      .stats-card {
+        grid-template-columns: 1fr;
+      }
+      .progress-container {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="title-area">
+        <span class="logo">LG</span>
+        <h1>WorksOS Phase Dashboard</h1>
+      </div>
+      <button class="theme-toggle" id="themeBtn">🌙 Dark Mode</button>
+    </div>
+
+    <!-- Dropzone -->
+    <div class="dropzone" id="dropzone">
+      📁 여기에 <code>plan/*.json</code> 파일들을 드래그 앤 드롭하거나 클릭하여 상태 정보를 실시간으로 업데이트하세요.
+      <input type="file" id="fileInput" multiple accept=".json" style="display: none;">
+    </div>
+
+    <!-- Total Stats -->
+    <div class="stats-card">
+      <div class="stat-item">
+        <span class="stat-label">진행률 (Overall Progress)</span>
+        <span class="stat-value" id="overallPercent">0%</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">완료 태스크 / 전체 태스크</span>
+        <span class="stat-value" id="taskCounts">0 / 0</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="overallProgressBar"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Timeline Map -->
+  <div class="timeline-map" id="timelineMap"></div>
+
+  <!-- Phase Cards Grid -->
+  <main class="phases-grid" id="phasesGrid"></main>
+
+  <script>
+    // Embedded Data injected during build
+    window.__INITIAL_DATA__ = [
+  {
+    "phase": 0,
+    "title": "Project Foundation & Infrastructure Setup",
+    "title_ko": "프로젝트 기반 및 인프라 셋업",
+    "description": "개발에 앞서 모노레포 프로젝트 구조, 기술 스택, 데이터베이스 스키마, 공통 유틸리티, CI/CD 기초, 개발 환경을 구성한다. 이 Phase가 완료되어야 이후 모든 Phase의 개발이 원활하게 진행된다.",
+    "status": "completed",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 7,
+      "not_started": 0,
+      "in_progress": 0,
+      "completed": 7,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "1주 (W1 전반)",
+    "priority": "Critical",
+    "dependencies": [],
+    "tasks": [
+      {
+        "id": "P0-T1",
+        "title": "모노레포 프로젝트 초기화",
+        "status": "completed",
+        "description": "apps/server, apps/web, packages/shared 구조로 모노레포를 생성한다. pnpm workspace 또는 npm workspace를 사용한다.",
+        "subtasks": [
+          "루트 package.json 및 workspace 설정",
+          "apps/server - Express + TypeScript 프로젝트 초기화",
+          "apps/web - Vite + React + TypeScript 프로젝트 초기화",
+          "packages/shared - 공유 타입/유틸리티 패키지 생성",
+          "TypeScript tsconfig 설정 (경로 alias, strict mode)",
+          "ESLint + Prettier 공통 설정"
+        ]
+      },
+      {
+        "id": "P0-T2",
+        "title": "백엔드 기본 프레임워크 구성",
+        "status": "completed",
+        "description": "Express.js 서버, 미들웨어 체인, 에러 핸들링, 로깅(Winston) 기본 구조를 완성한다.",
+        "subtasks": [
+          "Express 서버 엔트리 포인트 (server.ts)",
+          "환경변수 관리 (.env, dotenv, 포트 설정)",
+          "CORS, body-parser, helmet 미들웨어",
+          "글로벌 에러 핸들러 (표준 에러 응답 포맷)",
+          "Winston 로거 설정 (파일 로테이션, 콘솔 출력)",
+          "헬스체크 엔드포인트 (GET /api/v1/health)",
+          "API 라우터 구조 생성 (/api/v1/ prefix)"
+        ]
+      },
+      {
+        "id": "P0-T3",
+        "title": "데이터베이스 스키마 설계 및 Prisma 설정",
+        "status": "completed",
+        "description": "계획서 7장의 전체 데이터 모델을 Prisma 스키마로 작성하고, 초기 마이그레이션을 실행한다.",
+        "subtasks": [
+          "Prisma 설치 및 SQLite 프로바이더 설정",
+          "schema.prisma에 전체 모델 정의 (Project, ProjectLink, InboxItem, Task, MeetingNote, Decision, Tag, UserSetting, AuditLog)",
+          "M:N 관계 테이블 정의 (EntityTag, TaskLink, MeetingNoteTask, MeetingNoteDecision, DecisionFollowUpTask)",
+          "인덱스 정의 (계획서 7.3 참조)",
+          "초기 마이그레이션 실행 및 검증",
+          "Prisma Client 생성 및 타입 확인",
+          "seed.ts에 FTS5 가상 테이블 및 트리거 자동 생성 로직 통합"
+        ]
+      },
+      {
+        "id": "P0-T4",
+        "title": "공유 타입 및 유틸리티 패키지",
+        "status": "completed",
+        "description": "프론트엔드와 백엔드에서 공통으로 사용하는 타입 정의와 Zod 스키마를 packages/shared에 작성한다.",
+        "subtasks": [
+          "ENUM 타입 정의 (TaskStatus, Priority, InboxStatus, ProjectStatus, SourceType, LinkType, ThemeType 등)",
+          "API 요청/응답 타입 정의",
+          "Zod 검증 스키마 (각 엔티티별 create/update)",
+          "공통 페이지네이션 타입 정의",
+          "날짜 유틸리티 (ISO 8601 변환 등)"
+        ]
+      },
+      {
+        "id": "P0-T5",
+        "title": "프론트엔드 기본 환경 구성",
+        "status": "completed",
+        "description": "React 앱의 기본 구조, 라우팅, 상태관리, UI 라이브러리를 셋업한다.",
+        "subtasks": [
+          "Vite 설정 (proxy, alias 등)",
+          "React Router 6 기본 라우트 구조 (Layout + 8개 주요 페이지 빈 컴포넌트)",
+          "shadcn/ui 초기화 및 테마 설정",
+          "Tailwind CSS 설정 (다크모드 지원, 커스텀 컬러 팔레트)",
+          "Zustand 전역 스토어 기본 구조",
+          "TanStack Query 설정 (QueryClient, defaultOptions)",
+          "Axios 인스턴스 생성 (base URL, 인터셉터, 에러 핸들링)",
+          "기본 레이아웃 컴포넌트 (좌측 Navigation Bar 240px + 우측 Main Content)"
+        ]
+      },
+      {
+        "id": "P0-T6",
+        "title": "시드 데이터 스크립트",
+        "status": "completed",
+        "description": "개발 및 QA 환경에서 사용할 시드 데이터를 생성하는 스크립트를 작성한다.",
+        "subtasks": [
+          "Project 5개 (다양한 상태, Sub Project 포함)",
+          "InboxItem 20개",
+          "Task 50개 (다양한 상태, 우선순위, 마감일)",
+          "MeetingNote 10개 (Markdown 본문 포함)",
+          "Decision 5개",
+          "Tag 10개 (다양한 색상)",
+          "ProjectLink 15개",
+          "npx prisma db seed 명령으로 실행 가능하도록 설정"
+        ]
+      },
+      {
+        "id": "P0-T7",
+        "title": "개발 환경 편의 설정",
+        "status": "completed",
+        "description": "개발 생산성을 높이기 위한 도구와 스크립트를 설정한다.",
+        "subtasks": [
+          "nodemon 또는 tsx watch 설정 (백엔드 핫 리로드)",
+          "Vite dev server 프록시 설정 (API 요청 → 백엔드)",
+          "npm scripts 정리 (dev, build, test, seed, migrate)",
+          "Git 초기화 및 .gitignore 설정",
+          "README.md 작성 (개발 환경 셋업 가이드)"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P0-CC1",
+        "criterion": "모노레포 구조가 올바르게 동작한다",
+        "verification": "루트에서 `npm run dev` 실행 시 백엔드(Express)와 프론트엔드(Vite) 모두 정상 시작되고, 프론트엔드에서 /api/v1/health 호출 시 {status: 'ok'} 응답을 받는다."
+      },
+      {
+        "id": "P0-CC2",
+        "criterion": "데이터베이스 스키마가 전체 엔티티를 포함한다",
+        "verification": "prisma migrate dev 실행 후 SQLite DB 파일이 생성되고, 모든 테이블(9개 엔티티 + 관계 테이블)이 존재하며, prisma studio에서 확인 가능하다."
+      },
+      {
+        "id": "P0-CC3",
+        "criterion": "FTS5 가상 테이블이 정상 동작한다",
+        "verification": "npx prisma db seed 실행 시 데이터 시딩과 함께 FTS5 가상 테이블 및 트리거가 자동 구축되며, task_fts 등 가상 테이블에 대한 영어/한글 검색 쿼리가 즉시 정상적으로 작동하여 데이터를 반환한다."
+      },
+      {
+        "id": "P0-CC4",
+        "criterion": "공유 타입이 양쪽 프로젝트에서 사용 가능하다",
+        "verification": "packages/shared에서 export한 타입과 Zod 스키마를 apps/server와 apps/web에서 import하여 TypeScript 컴파일 오류 없이 사용 가능하다."
+      },
+      {
+        "id": "P0-CC5",
+        "criterion": "시드 데이터가 정상 삽입된다",
+        "verification": "npx prisma db seed 실행 시 에러 없이 완료되고, Prisma Studio에서 모든 엔티티의 데이터를 확인할 수 있다."
+      },
+      {
+        "id": "P0-CC6",
+        "criterion": "프론트엔드 기본 레이아웃이 렌더링된다",
+        "verification": "브라우저에서 localhost 접속 시 좌측 네비게이션 바(240px)와 우측 메인 콘텐츠 영역이 표시되고, 모든 메뉴 항목이 클릭 시 해당 빈 페이지로 라우팅된다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "FTS5 한글 토크나이저 이슈",
+        "impact": "높음",
+        "mitigation": "SQLite FTS5의 unicode61 토크나이저를 사용하되, 한글 검색 품질이 부족할 경우 trigram 토크나이저 또는 커스텀 토크나이저를 검토한다."
+      },
+      {
+        "risk": "모노레포 설정 복잡성",
+        "impact": "중간",
+        "mitigation": "pnpm workspace를 우선 시도하고, 문제 시 npm workspace로 전환한다. 과도한 설정 최적화는 피한다."
+      }
+    ],
+    "notes": [
+      "이 Phase는 계획서 원본에는 명시적으로 Phase로 분리되지 않았으나, 견고한 기반 없이 기능 개발을 시작하면 후반부에 기술 부채가 급증하므로 별도 Phase로 분리함.",
+      "DB 스키마는 이후 변경이 어려우므로, 이 단계에서 계획서 7장 전체를 Prisma 스키마로 변환하고 충분히 검토한다.",
+      "UserSetting 테이블의 초기 데이터(id=1)는 시드에서 반드시 생성해야 한다."
+    ]
+  },
+  {
+    "phase": 1,
+    "title": "Core Workflow — Inbox → Task → Project → Kanban",
+    "title_ko": "핵심 워크플로우 — Inbox → Task → Project → Kanban",
+    "description": "WorksOS의 핵심 업무 흐름인 Inbox 수집 → Task 전환 → Project 연결 → Kanban 시각화를 구현한다. 이 Phase가 완성되면 제품의 근본적인 가치 제안이 동작하게 된다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 12,
+      "not_started": 12,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "3주 (W1 후반 ~ W3)",
+    "priority": "Critical",
+    "dependencies": [
+      "Phase 0"
+    ],
+    "tasks": [
+      {
+        "id": "P1-T1",
+        "title": "Project CRUD API",
+        "status": "not_started",
+        "description": "프로젝트 생성/조회/수정/삭제 REST API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/projects — 목록 조회 (필터: status, tag, 페이지네이션)",
+          "POST /api/v1/projects — 생성 (Zod 검증)",
+          "GET /api/v1/projects/:id — 상세 조회 (tasks 카운트, 최근 회의록·결정사항 포함)",
+          "PATCH /api/v1/projects/:id — 수정",
+          "DELETE /api/v1/projects/:id — 소프트 삭제 (status → Archived)",
+          "Sub Project 생성 로직 (parent_project_id, 1단계만 허용 검증)",
+          "서비스 레이어 분리 (Controller → Service → Repository 패턴)",
+          "AuditLog 기록 미들웨어 (Create/Update/Delete 시 자동 로깅)"
+        ]
+      },
+      {
+        "id": "P1-T2",
+        "title": "ProjectLink CRUD API",
+        "status": "not_started",
+        "description": "프로젝트 관련 링크 관리 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/projects/:id/links — 링크 목록",
+          "POST /api/v1/projects/:id/links — 링크 추가 (title, url_or_path, type, description, tags)",
+          "PATCH /api/v1/project-links/:id — 링크 수정",
+          "DELETE /api/v1/project-links/:id — 링크 삭제",
+          "링크 타입 ENUM 검증 (GitLab, Jira, SharePoint, Confluence, Teams, LocalFile, Other)"
+        ]
+      },
+      {
+        "id": "P1-T3",
+        "title": "Inbox CRUD API",
+        "status": "not_started",
+        "description": "Inbox Item 생성/조회/수정/삭제 및 상태 관리 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/inbox — 목록 조회 (필터: status, project_id, tag, 정렬: captured_at DESC)",
+          "POST /api/v1/inbox — 생성 (source_type, source_detail, raw_content, project_id, due_date, tags)",
+          "PATCH /api/v1/inbox/:id — 수정",
+          "DELETE /api/v1/inbox/:id — 삭제",
+          "Quick Inbox Input 지원 (최소 필드: raw_content만으로 생성 가능)",
+          "Unprocessed 카운트 API (Dashboard용)"
+        ]
+      },
+      {
+        "id": "P1-T4",
+        "title": "Task CRUD API",
+        "status": "not_started",
+        "description": "Task 생성/조회/수정/삭제, 상태 변경, 필터링 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/tasks — 목록 (필터: project_id, status, due_date, tag, priority, 페이지네이션)",
+          "POST /api/v1/tasks — 직접 생성 (Inbox 거치지 않는 경우)",
+          "GET /api/v1/tasks/:id — 상세",
+          "PATCH /api/v1/tasks/:id — 수정 (status 변경 시 completed_at/archived_at/canceled_at 자동 기록)",
+          "DELETE /api/v1/tasks/:id — 삭제",
+          "상태 전이 검증 로직 (유효한 상태 전이만 허용, 예: Canceled → In Progress 불가)",
+          "Today/Overdue/Waiting 필터 쿼리 (Dashboard용)"
+        ]
+      },
+      {
+        "id": "P1-T5",
+        "title": "Inbox → Task 전환 API",
+        "status": "not_started",
+        "description": "Inbox Item을 Task로 전환하는 핵심 워크플로우를 구현한다.",
+        "subtasks": [
+          "POST /api/v1/inbox/:id/convert — Task 전환 (body: title, project_id, sub_project_id, priority, due_date, tags)",
+          "전환 시 Task.source_inbox_id에 원본 Inbox ID 자동 연결",
+          "1:N 전환 지원 (하나의 Inbox에서 여러 Task 생성 가능)",
+          "전환 후 Inbox Item status 자동 변경 (Unprocessed → Converted)",
+          "부분 전환: 이미 Converted된 Inbox에서도 추가 Task 생성 허용",
+          "전환 시 Inbox의 raw_content를 Task description에 자동 복사 옵션"
+        ]
+      },
+      {
+        "id": "P1-T6",
+        "title": "Kanban API",
+        "status": "not_started",
+        "description": "Kanban 보드를 위한 데이터 조회 및 상태 변경 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/kanban?scope=all — 전체 Kanban (status별 그룹핑)",
+          "GET /api/v1/kanban?scope=project&project_id=:id — 프로젝트별 Kanban",
+          "GET /api/v1/kanban?scope=sub_project&sub_project_id=:id — 하위 프로젝트별 Kanban",
+          "Kanban 카드 데이터 포맷 (title, priority, due_date, project_name, tags, overdue 여부)",
+          "PATCH /api/v1/tasks/:id/status — 드래그앤드롭용 경량 상태 변경 API (optimistic update 지원)"
+        ]
+      },
+      {
+        "id": "P1-T7",
+        "title": "Project 목록 UI",
+        "status": "not_started",
+        "description": "프로젝트 카드 리스트 화면을 구현한다.",
+        "subtasks": [
+          "프로젝트 카드 컴포넌트 (이름, 상태 뱃지, 태그, 진행 Task 수)",
+          "프로젝트 목록 페이지 (그리드/리스트 뷰)",
+          "프로젝트 생성 모달 (이름, 설명, 상태, 태그)",
+          "프로젝트 수정/삭제 기능",
+          "Sub Project 생성 UI (부모 프로젝트 선택)",
+          "프로젝트 상태 필터 (Active, On Hold, Done, Archived)",
+          "TanStack Query를 사용한 서버 상태 관리"
+        ]
+      },
+      {
+        "id": "P1-T8",
+        "title": "Project 상세 페이지 (기본 구조)",
+        "status": "not_started",
+        "description": "프로젝트 상세 화면의 Header와 6개 탭 구조를 구현한다. (탭 콘텐츠는 Phase별로 채워간다.)",
+        "subtasks": [
+          "Project Detail 페이지 라우트 (/projects/:id)",
+          "Header 영역 (프로젝트 이름, 개요, 상태, 태그, 관련 링크)",
+          "6개 탭 네비게이션 (Overview, Tasks, Kanban, Meeting Notes, Decisions, Links)",
+          "Overview 탭 (진행/대기 Task 카운트, Sub Project 목록)",
+          "Tasks 탭 (리스트형 Task 목록, 필터, 정렬)",
+          "Kanban 탭 (Phase 1에서 구현, 프로젝트 범위 Kanban)",
+          "Links 탭 (ProjectLink CRUD UI)",
+          "Meeting Notes / Decisions 탭은 빈 플레이스홀더 (Phase 3, 5에서 구현)"
+        ]
+      },
+      {
+        "id": "P1-T9",
+        "title": "Inbox UI",
+        "status": "not_started",
+        "description": "Inbox 화면을 구현한다.",
+        "subtasks": [
+          "Inbox 목록 페이지 (미처리 항목 우선 표시)",
+          "Inbox Item 생성 폼 (source_type 선택, raw_content, project, due_date, tags)",
+          "Inbox Item 상세 보기 / 수정",
+          "Task 전환 UI (전환 버튼 → 전환 폼: title, project, priority, due_date, tags)",
+          "1:N 전환 이력 표시 (이 Inbox에서 생성된 Task 목록)",
+          "Inbox 상태 필터 (Unprocessed, Converted, Archived, Canceled)",
+          "Inbox Item 삭제 확인 모달"
+        ]
+      },
+      {
+        "id": "P1-T10",
+        "title": "Task UI",
+        "status": "not_started",
+        "description": "Task 관리 화면을 구현한다.",
+        "subtasks": [
+          "Task 직접 생성 폼 (Inbox 거치지 않는 경우)",
+          "Task 상세 보기 / 수정 (인라인 편집 또는 모달)",
+          "Task 상태 변경 (드롭다운 또는 버튼)",
+          "Task 삭제 확인 모달",
+          "우선순위 뱃지 (Critical: 빨강, High: 주황, Medium: 파랑, Low: 회색)",
+          "마감일 표시 (오늘/과기한 빨간색 강조)",
+          "Task에서 원본 Inbox Item 링크 표시 (source_inbox_id가 있는 경우)"
+        ]
+      },
+      {
+        "id": "P1-T11",
+        "title": "Kanban Board UI",
+        "status": "not_started",
+        "description": "Kanban 보드를 구현한다.",
+        "subtasks": [
+          "Kanban 보드 레이아웃 (status별 컬럼, 수평 스크롤)",
+          "Task 카드 컴포넌트 (title, priority, due_date, project, tags)",
+          "dnd-kit을 사용한 드래그 앤 드롭 상태 변경",
+          "Optimistic UI Update (드래그 즉시 반영, 서버 동기화 비동기)",
+          "전체 / 프로젝트별 Kanban 토글",
+          "필터 (태그, 우선순위, 마감일)",
+          "빈 컬럼에도 드롭 가능",
+          "카드 클릭 시 Task 상세로 이동"
+        ]
+      },
+      {
+        "id": "P1-T12",
+        "title": "Phase 1 단위 테스트 및 통합 테스트",
+        "status": "not_started",
+        "description": "Phase 1에서 구현한 모든 API의 테스트를 작성한다.",
+        "subtasks": [
+          "Project CRUD API 테스트 (Supertest)",
+          "Inbox CRUD API 테스트",
+          "Task CRUD API 테스트",
+          "Inbox → Task 전환 API 테스트 (1:1, 1:N 전환, 상태 변경 검증)",
+          "Kanban API 테스트 (전체/프로젝트별 그룹핑 검증)",
+          "상태 전이 검증 테스트",
+          "비즈니스 로직 단위 테스트 (서비스 레이어)"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P1-CC1",
+        "criterion": "Inbox에서 업무를 수집할 수 있다",
+        "verification": "Inbox 화면에서 source_type(Teams, Email 등)을 선택하고 raw_content를 입력하여 새 Inbox Item을 생성하면, 목록에 Unprocessed 상태로 표시된다."
+      },
+      {
+        "id": "P1-CC2",
+        "criterion": "Inbox Item을 Task로 전환할 수 있다 (1:N 포함)",
+        "verification": "하나의 Inbox Item에서 '전환' 버튼을 눌러 Task를 생성하면, Inbox 상태가 Converted로 변경되고, 같은 Inbox에서 추가 Task를 생성할 수 있으며, 전환된 Task에서 원본 Inbox로의 링크가 표시된다."
+      },
+      {
+        "id": "P1-CC3",
+        "criterion": "Task를 Inbox 없이 직접 생성할 수 있다",
+        "verification": "Task 생성 폼에서 title, project, priority, due_date를 입력하여 Inbox 거치지 않고 직접 Task를 생성하면, source_inbox_id가 null인 Task가 생성되어 Kanban에 표시된다."
+      },
+      {
+        "id": "P1-CC4",
+        "criterion": "Kanban에서 드래그 앤 드롭으로 상태를 변경할 수 있다",
+        "verification": "Kanban 보드에서 Task 카드를 다른 상태 컬럼으로 드래그하면 100ms 이내에 UI가 반영되고, 페이지 새로고침 후에도 변경된 상태가 유지된다."
+      },
+      {
+        "id": "P1-CC5",
+        "criterion": "프로젝트별로 Task를 조회할 수 있다",
+        "verification": "Project 상세 화면의 Tasks 탭과 Kanban 탭에서 해당 프로젝트에 연결된 Task만 표시되며, Sub Project 별 필터링도 동작한다."
+      },
+      {
+        "id": "P1-CC6",
+        "criterion": "전체 Kanban과 프로젝트별 Kanban을 전환할 수 있다",
+        "verification": "Kanban 화면 상단의 토글로 전체/프로젝트별 뷰를 전환할 수 있으며, 프로젝트 선택 시 해당 프로젝트의 Task만 보인다."
+      },
+      {
+        "id": "P1-CC7",
+        "criterion": "API 통합 테스트가 모두 통과한다",
+        "verification": "npm run test 실행 시 Phase 1 관련 모든 테스트가 통과한다 (Project/Inbox/Task/Kanban/전환 API)."
+      },
+      {
+        "id": "P1-CC8",
+        "criterion": "AuditLog가 자동으로 기록된다",
+        "verification": "Project/Task/Inbox의 생성/수정/삭제 시 AuditLog 테이블에 entity_type, entity_id, action, changed_fields, timestamp가 자동 기록되어 Prisma Studio에서 확인 가능하다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "dnd-kit과 shadcn/ui 호환성 이슈",
+        "impact": "중간",
+        "mitigation": "공식 예제를 참고하여 구현하되, 심각한 호환 이슈 발생 시 @hello-pangea/dnd로 대체한다."
+      },
+      {
+        "risk": "Optimistic Update 데이터 불일치",
+        "impact": "중간",
+        "mitigation": "TanStack Query의 optimistic update 패턴을 사용하되, 서버 에러 시 rollback 로직을 반드시 구현한다."
+      },
+      {
+        "risk": "상태 전이 규칙 복잡성",
+        "impact": "낮음",
+        "mitigation": "상태 전이 매트릭스를 shared 패키지에 정의하고, 서버와 클라이언트 양쪽에서 검증한다."
+      }
+    ],
+    "notes": [
+      "이 Phase는 제품의 핵심 가치 제안(Inbox → Task → Project → Kanban)을 완성하는 가장 중요한 단계이다.",
+      "상태 전이 규칙은 MVP에서는 느슨하게 적용하되, 최소한 Canceled/Archived → In Progress 같은 비논리적 전이는 차단한다.",
+      "Kanban의 드래그 반응 100ms 이내는 비기능 요구사항 (15.1)이므로 반드시 충족해야 한다."
+    ]
+  },
+  {
+    "phase": 2,
+    "title": "Dashboard & Status Overview",
+    "title_ko": "대시보드 및 상태 총괄 뷰",
+    "description": "사용자가 매일 첫 화면에서 현재 업무 상태를 한눈에 파악할 수 있는 Dashboard를 구현한다. Quick Inbox Input, 미처리 Inbox, Today/Overdue/Waiting 요약, 사용자 정의 Kanban 보드를 포함한다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 9,
+      "not_started": 9,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "2주 (W4 ~ W5)",
+    "priority": "High",
+    "dependencies": [
+      "Phase 1"
+    ],
+    "tasks": [
+      {
+        "id": "P2-T1",
+        "title": "Dashboard 레이아웃 구현",
+        "status": "not_started",
+        "description": "계획서 6.4의 Dashboard 레이아웃을 구현한다.",
+        "subtasks": [
+          "3단 레이아웃: 상단(Quick Inbox) + 중단(Inbox/Today 분할) + 하단(Kanban)",
+          "반응형 그리드 (1280px 이상 최적화, 1024px 이상 사용 가능)",
+          "섹션 간 적절한 여백과 카드형 디자인",
+          "Dashboard가 앱의 기본 랜딩 페이지 (/ 경로)"
+        ]
+      },
+      {
+        "id": "P2-T2",
+        "title": "Quick Inbox Input 구현",
+        "status": "not_started",
+        "description": "Dashboard 상단에 한 줄 텍스트박스와 프로젝트 선택으로 빠르게 Inbox Item을 생성하는 컴포넌트를 구현한다.",
+        "subtasks": [
+          "한 줄 텍스트 입력 + 프로젝트 선택 드롭다운 (인라인)",
+          "Enter 키로 즉시 생성 (source_type은 기본값 'Other')",
+          "생성 후 입력 필드 자동 초기화",
+          "생성 성공 시 미처리 Inbox 영역에 즉시 반영",
+          "프로젝트 목록 캐싱 (TanStack Query)"
+        ]
+      },
+      {
+        "id": "P2-T3",
+        "title": "미처리 Inbox 위젯",
+        "status": "not_started",
+        "description": "Dashboard 좌측에 Unprocessed 상태의 Inbox Item 목록을 표시한다.",
+        "subtasks": [
+          "Unprocessed Inbox Item 리스트 (최근 순)",
+          "카운트 뱃지 표시",
+          "각 항목 클릭 시 Inbox 상세로 이동",
+          "빠른 전환 버튼 (즉시 Task 전환 모달)",
+          "빈 상태 메시지 ('처리할 Inbox가 없습니다 ✨')"
+        ]
+      },
+      {
+        "id": "P2-T4",
+        "title": "Today / Overdue / Waiting 위젯",
+        "status": "not_started",
+        "description": "Dashboard 우측에 오늘 마감, 기한 초과, 외부 대기 중인 Task를 요약 표시한다.",
+        "subtasks": [
+          "Today Tasks: due_date가 오늘인 Task 리스트",
+          "Overdue Tasks: due_date가 과거이고 완료되지 않은 Task 리스트 (빨간색 강조)",
+          "Waiting Tasks: status가 Waiting인 Task 리스트",
+          "각 섹션별 카운트 뱃지",
+          "각 항목 클릭 시 Task 상세로 이동",
+          "빈 상태 메시지",
+          "대시보드 데이터 조회용 통합 API (GET /api/v1/dashboard/summary)"
+        ]
+      },
+      {
+        "id": "P2-T5",
+        "title": "Dashboard Kanban 위젯",
+        "status": "not_started",
+        "description": "Dashboard 하단에 사용자가 선택한 Status 컬럼만 표시하는 Kanban 보드를 구현한다.",
+        "subtasks": [
+          "UserSetting의 dashboard_visible_statuses 기반으로 표시할 컬럼 결정",
+          "기본값: Open, In Progress, Waiting (나머지 컬럼은 숨김)",
+          "Phase 1에서 만든 Kanban 컴포넌트 재사용",
+          "전체/프로젝트별 필터 토글",
+          "Settings 페이지로 이동하는 '표시 설정' 링크"
+        ]
+      },
+      {
+        "id": "P2-T6",
+        "title": "Settings — Kanban 표시 설정",
+        "status": "not_started",
+        "description": "Settings 페이지에서 Dashboard Kanban에 표시할 Status 컬럼을 선택하는 UI를 구현한다.",
+        "subtasks": [
+          "Settings 페이지 기본 구조 (좌측 메뉴 + 우측 설정 패널)",
+          "Kanban 표시 설정 섹션",
+          "8개 Status 체크박스 토글 (최소 1개 이상 선택 강제)",
+          "저장 시 UserSetting.dashboard_visible_statuses 업데이트",
+          "GET /api/v1/settings — 설정 조회 API",
+          "PATCH /api/v1/settings — 설정 수정 API"
+        ]
+      },
+      {
+        "id": "P2-T7",
+        "title": "다크모드 구현",
+        "status": "not_started",
+        "description": "Settings에서 테마를 전환할 수 있는 다크모드를 구현한다.",
+        "subtasks": [
+          "테마 토글: Light / Dark / System",
+          "CSS 변수 기반 테마 시스템 (shadcn/ui 테마 확장)",
+          "Zustand 스토어에 테마 상태 저장",
+          "로컬 스토리지 + UserSetting DB 양쪽에 동기화",
+          "시스템 설정 감지 (prefers-color-scheme)",
+          "다크모드 시 전체 UI 색상 적용 확인"
+        ]
+      },
+      {
+        "id": "P2-T8",
+        "title": "Dashboard 데이터 API",
+        "status": "not_started",
+        "description": "Dashboard 위젯들에 필요한 데이터를 효율적으로 제공하는 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/dashboard/summary — 통합 요약 (unprocessed_inbox_count, today_tasks_count, overdue_tasks_count, waiting_tasks_count)",
+          "GET /api/v1/dashboard/inbox — Unprocessed Inbox 최근 N건",
+          "GET /api/v1/dashboard/today — Today Tasks",
+          "GET /api/v1/dashboard/overdue — Overdue Tasks",
+          "GET /api/v1/dashboard/waiting — Waiting Tasks",
+          "API 응답에 필요한 최소 데이터만 포함 (성능 최적화)"
+        ]
+      },
+      {
+        "id": "P2-T9",
+        "title": "Phase 2 테스트",
+        "status": "not_started",
+        "description": "Phase 2에서 구현한 기능의 테스트를 작성한다.",
+        "subtasks": [
+          "Dashboard 요약 API 통합 테스트",
+          "Settings API 통합 테스트",
+          "Today/Overdue 필터 로직 단위 테스트 (날짜 경계 조건 포함)",
+          "Dashboard 표시 설정 변경 후 Kanban 컬럼 반영 테스트",
+          "다크모드 전환 시 CSS 변수 적용 확인"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P2-CC1",
+        "criterion": "Dashboard에서 Quick Inbox Input으로 빠르게 업무를 수집할 수 있다",
+        "verification": "Dashboard 상단의 입력 필드에 텍스트 입력 + Enter 누르면 1초 이내에 미처리 Inbox 영역에 새 항목이 표시된다."
+      },
+      {
+        "id": "P2-CC2",
+        "criterion": "Today/Overdue/Waiting 요약이 정확하게 표시된다",
+        "verification": "시드 데이터에 오늘 마감, 기한 초과, Waiting 상태의 Task를 포함시키고, Dashboard에서 각 섹션의 카운트와 목록이 정확히 표시되는지 확인한다."
+      },
+      {
+        "id": "P2-CC3",
+        "criterion": "Dashboard Kanban에서 사용자가 선택한 컬럼만 표시된다",
+        "verification": "Settings에서 Open, In Progress, Done만 선택하고 저장하면, Dashboard의 Kanban에 해당 3개 컬럼만 표시되고 나머지는 숨겨진다."
+      },
+      {
+        "id": "P2-CC4",
+        "criterion": "다크모드가 전체 UI에 적용된다",
+        "verification": "Settings에서 테마를 Dark로 변경하면 모든 화면(Dashboard, Inbox, Projects, Kanban 등)에 다크 색상이 적용되고, 텍스트/버튼/카드 등의 가독성이 유지된다."
+      },
+      {
+        "id": "P2-CC5",
+        "criterion": "Dashboard가 앱의 기본 랜딩 페이지이다",
+        "verification": "브라우저에서 http://localhost:3080 접속 시 Dashboard 화면이 첫 화면으로 표시된다."
+      },
+      {
+        "id": "P2-CC6",
+        "criterion": "시나리오 8.3 (오늘 할 일 확인)이 완전히 동작한다",
+        "verification": "계획서 8.3의 6단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "Dashboard 데이터 API 응답 시간 초과",
+        "impact": "중간",
+        "mitigation": "각 위젯을 독립적인 API 호출로 분리하여 병렬 로딩하고, TanStack Query의 staleTime을 설정하여 불필요한 재요청을 방지한다."
+      },
+      {
+        "risk": "다크모드 시 일부 컴포넌트 색상 불일치",
+        "impact": "낮음",
+        "mitigation": "shadcn/ui의 CSS 변수 시스템을 일관되게 사용하고, 커스텀 색상은 CSS 변수로 정의한다."
+      }
+    ],
+    "notes": [
+      "Dashboard는 사용자가 매일 가장 먼저 보는 화면이므로 로딩 속도와 시각적 정보 밀도에 특히 신경써야 한다.",
+      "Quick Inbox Input은 '빠른 수집'이 핵심이므로, 최소 필드(raw_content)만으로 생성 가능해야 한다.",
+      "Overdue 계산 시 시간대(timezone) 처리에 주의한다. 서버는 UTC, 클라이언트에서 로컬 시간 기준 Today/Overdue 판단."
+    ]
+  },
+  {
+    "phase": 3,
+    "title": "Meeting Notes & Templates",
+    "title_ko": "회의록 및 템플릿",
+    "description": "프로젝트별 회의록 작성, Markdown 에디터, 템플릿 시스템, HTML Export, 회의록 내 Action Item → Task 전환 기능을 구현한다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 7,
+      "not_started": 7,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "2주 (W6 ~ W7)",
+    "priority": "High",
+    "dependencies": [
+      "Phase 1"
+    ],
+    "tasks": [
+      {
+        "id": "P3-T1",
+        "title": "Meeting Notes CRUD API",
+        "status": "not_started",
+        "description": "회의록 관리 REST API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/projects/:id/meeting-notes — 프로젝트별 회의록 목록 (meeting_date DESC 정렬)",
+          "POST /api/v1/projects/:id/meeting-notes — 생성 (title, meeting_date, attendees, markdown_content, tags)",
+          "GET /api/v1/meeting-notes/:id — 상세 (관련 Task, Decision 포함)",
+          "PATCH /api/v1/meeting-notes/:id — 수정",
+          "DELETE /api/v1/meeting-notes/:id — 삭제",
+          "회의록 생성 시 AuditLog 자동 기록"
+        ]
+      },
+      {
+        "id": "P3-T2",
+        "title": "HTML Export API",
+        "status": "not_started",
+        "description": "회의록의 Markdown 본문을 HTML로 변환하여 Export하는 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/meeting-notes/:id/export.html — HTML Export 엔드포인트",
+          "markdown-it을 사용한 Markdown → HTML 변환",
+          "DOMPurify를 사용한 HTML 살균 (XSS 방지)",
+          "Export HTML에 기본 스타일 인라인 포함 (회사 시스템 업로드 시 깨지지 않도록)",
+          "HTML 파일 다운로드 또는 브라우저에서 미리보기",
+          "html_content 캐시 필드 업데이트 (markdown 변경 시 캐시 무효화)"
+        ]
+      },
+      {
+        "id": "P3-T3",
+        "title": "회의록 템플릿 시스템",
+        "status": "not_started",
+        "description": "회의록 작성 시 기본 템플릿을 제공하고, 사용자가 커스텀 템플릿을 저장할 수 있도록 한다.",
+        "subtasks": [
+          "기본 제공 템플릿 (날짜, 참석자, 안건, 논의 내용, 결정사항, Action Items 구조)",
+          "UserSetting.meeting_note_template에 커스텀 템플릿 저장",
+          "Settings 페이지에서 템플릿 편집 UI",
+          "새 회의록 생성 시 자동 템플릿 적용",
+          "템플릿 변수 지원 ({{date}}, {{project_name}} 등 간단한 치환)"
+        ]
+      },
+      {
+        "id": "P3-T4",
+        "title": "Markdown 에디터 UI (TipTap)",
+        "status": "not_started",
+        "description": "회의록 작성을 위한 위지윅 + Markdown 동시 지원 에디터를 구현한다.",
+        "subtasks": [
+          "TipTap 에디터 설치 및 기본 설정",
+          "지원 기능: 제목(H1~H3), 굵게, 기울임, 목록(순서/비순서), 체크박스, 코드블록, 링크, 테이블, 구분선",
+          "마크다운 모드 전환 (위지윅 ↔ 소스 코드 토글)",
+          "에디터 툴바 UI",
+          "자동 저장 (30초 간격 또는 blur 시)",
+          "이미지 삽입은 MVP에서 미지원 (텍스트 링크로 대체)"
+        ]
+      },
+      {
+        "id": "P3-T5",
+        "title": "회의록 목록 및 상세 UI",
+        "status": "not_started",
+        "description": "회의록 목록 화면과 상세 보기/편집 화면을 구현한다.",
+        "subtasks": [
+          "Project Detail의 Meeting Notes 탭에 회의록 목록 표시",
+          "회의록 카드: 제목, 회의 날짜, 참석자 요약, 태그",
+          "회의록 상세 페이지 (별도 페이지, 모달 X — 계획서 6.6 확정)",
+          "편집 모드 전환 (읽기 전용 ↔ 편집)",
+          "회의록 삭제 확인 모달",
+          "관련 Decision 목록 표시 (Phase 5에서 연결)",
+          "HTML Export 다운로드 버튼"
+        ]
+      },
+      {
+        "id": "P3-T6",
+        "title": "Action Item → Task 전환",
+        "status": "not_started",
+        "description": "회의록 내 체크박스(Action Item)를 Task로 전환하는 기능을 구현한다.",
+        "subtasks": [
+          "회의록 본문에서 체크박스 항목 파싱",
+          "각 Action Item 옆에 '→ Task 전환' 버튼 표시",
+          "클릭 시 Task 생성 폼 모달 (제목은 체크박스 텍스트로 자동 채움)",
+          "생성된 Task와 MeetingNote 간 M:N 관계 연결 (related_task_ids)",
+          "이미 전환된 Action Item 표시 (비활성화 또는 Task 링크 표시)"
+        ]
+      },
+      {
+        "id": "P3-T7",
+        "title": "Phase 3 테스트",
+        "status": "not_started",
+        "description": "Phase 3에서 구현한 모든 기능의 테스트를 작성한다.",
+        "subtasks": [
+          "MeetingNote CRUD API 통합 테스트",
+          "HTML Export API 테스트 (Markdown → HTML 변환 정확성)",
+          "DOMPurify XSS 방지 테스트 (악의적 HTML 입력 시 살균 확인)",
+          "템플릿 적용 테스트",
+          "Action Item → Task 전환 API 테스트",
+          "회의록-Task M:N 관계 테스트"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P3-CC1",
+        "criterion": "프로젝트에서 회의록을 생성하고 Markdown으로 작성할 수 있다",
+        "verification": "Project Detail의 Meeting Notes 탭에서 + 버튼으로 새 회의록을 생성하고, TipTap 에디터에서 제목/목록/체크박스 등을 포함한 회의록을 작성하여 저장하면, 목록에 표시된다."
+      },
+      {
+        "id": "P3-CC2",
+        "criterion": "회의록 템플릿이 적용된다",
+        "verification": "Settings에서 커스텀 템플릿을 저장한 후, 새 회의록 생성 시 해당 템플릿이 에디터에 미리 채워진다."
+      },
+      {
+        "id": "P3-CC3",
+        "criterion": "HTML Export가 정상 동작한다",
+        "verification": "회의록 상세 화면에서 'HTML Export' 버튼을 클릭하면, Markdown이 HTML로 변환된 파일이 다운로드되고, 해당 HTML 파일을 브라우저에서 열면 포맷이 올바르게 표시된다."
+      },
+      {
+        "id": "P3-CC4",
+        "criterion": "Action Item을 Task로 전환할 수 있다",
+        "verification": "회의록에 체크박스로 작성된 Action Item 옆의 '→ Task 전환' 버튼을 클릭하면, Task 생성 폼이 열리고, 생성된 Task가 해당 회의록과 연결되어 관련 Task 목록에 표시된다."
+      },
+      {
+        "id": "P3-CC5",
+        "criterion": "시나리오 8.5 (회의록 작성)이 완전히 동작한다",
+        "verification": "계획서 8.5의 8단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+      },
+      {
+        "id": "P3-CC6",
+        "criterion": "HTML Export에 XSS 취약점이 없다",
+        "verification": "<script> 태그를 포함한 Markdown 입력으로 HTML Export 시, 스크립트 태그가 제거되어 출력된다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "TipTap 에디터 커스터마이징 복잡성",
+        "impact": "중간",
+        "mitigation": "TipTap의 기본 확장만 사용하고, 고급 커스터마이징은 피한다. 대안으로 Milkdown을 고려한다."
+      },
+      {
+        "risk": "Markdown ↔ TipTap 문서 모델 변환 손실",
+        "impact": "중간",
+        "mitigation": "위지윅 ↔ Markdown 전환 시 포맷 손실이 발생할 수 있으므로, Markdown을 원본으로 저장하고 TipTap은 편집 시에만 변환하는 방식을 채택한다."
+      },
+      {
+        "risk": "HTML Export 스타일 호환성",
+        "impact": "낮음",
+        "mitigation": "회사 시스템(Confluence, SharePoint 등)에 업로드할 때 스타일이 깨질 수 있으므로, 인라인 CSS만 사용하고 외부 CSS 의존성을 배제한다."
+      }
+    ],
+    "notes": [
+      "회의록 UI는 별도 페이지 방식이다 (모달 X) — 계획서 6.6 확정 사항.",
+      "이미지 삽입은 MVP에서 미지원. 이미지가 필요한 경우 로컬 파일 경로 또는 사내 서버 URL을 텍스트 링크로 기록하도록 안내한다.",
+      "자동 저장 기능은 사용자의 작업 손실을 방지하기 위해 반드시 구현한다. 30초 간격 또는 에디터에서 포커스가 벗어날 때 저장한다."
+    ]
+  },
+  {
+    "phase": 4,
+    "title": "Tags & Search",
+    "title_ko": "태그 및 검색",
+    "description": "모든 엔티티에 태그를 부여하고, SQLite FTS5를 활용한 전체 통합 검색 및 엔티티별 검색을 구현한다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 8,
+      "not_started": 8,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "2주 (W8 ~ W9)",
+    "priority": "High",
+    "dependencies": [
+      "Phase 1",
+      "Phase 3"
+    ],
+    "tasks": [
+      {
+        "id": "P4-T1",
+        "title": "Tag CRUD API",
+        "status": "not_started",
+        "description": "태그 관리 REST API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/tags — 전체 태그 목록 (사용 횟수 포함)",
+          "POST /api/v1/tags — 생성 (name, color, description)",
+          "PATCH /api/v1/tags/:id — 수정",
+          "DELETE /api/v1/tags/:id — 삭제 (연결된 엔티티에서 자동 해제)",
+          "태그 이름 UNIQUE 검증",
+          "태그 자동완성 API (GET /api/v1/tags/autocomplete?q=...)"
+        ]
+      },
+      {
+        "id": "P4-T2",
+        "title": "엔티티-태그 연결 API",
+        "status": "not_started",
+        "description": "모든 엔티티(Inbox, Task, Project, MeetingNote, Decision, ProjectLink)에 태그를 부여/해제하는 API를 구현한다.",
+        "subtasks": [
+          "POST /api/v1/{entity_type}/{id}/tags — 태그 연결 (body: tag_ids[])",
+          "DELETE /api/v1/{entity_type}/{id}/tags/:tag_id — 태그 해제",
+          "엔티티 CRUD API에 tags 필드 통합 (생성/수정 시 태그 함께 처리)",
+          "태그 기반 필터링 지원 (기존 목록 API에 tag 쿼리 파라미터 추가)",
+          "다중 태그 AND/OR 필터 지원 (예: ?tags=tag1,tag2&tag_mode=and)"
+        ]
+      },
+      {
+        "id": "P4-T3",
+        "title": "태그 관리 UI",
+        "status": "not_started",
+        "description": "태그 생성, 편집, 삭제 UI를 구현한다.",
+        "subtasks": [
+          "Settings 페이지에 태그 관리 섹션 추가",
+          "태그 목록 (이름, 색상 프리뷰, 사용 횟수)",
+          "태그 생성 모달 (이름, 색상 선택기 — 프리셋 색상 + HEX 입력)",
+          "태그 수정/삭제",
+          "태그 삭제 시 '이 태그가 N개 항목에 사용 중입니다' 경고"
+        ]
+      },
+      {
+        "id": "P4-T4",
+        "title": "태그 선택 공통 컴포넌트",
+        "status": "not_started",
+        "description": "모든 엔티티 폼에서 재사용할 수 있는 태그 선택 컴포넌트를 구현한다.",
+        "subtasks": [
+          "다중 선택 태그 입력 컴포넌트 (combobox 스타일)",
+          "기존 태그 검색 자동완성",
+          "새 태그 즉석 생성 ('새 태그 만들기' 옵션)",
+          "선택된 태그 뱃지 표시 (색상 포함)",
+          "기존 Inbox/Task/Project/MeetingNote 폼에 태그 컴포넌트 통합"
+        ]
+      },
+      {
+        "id": "P4-T5",
+        "title": "FTS5 전문 검색 구현",
+        "status": "not_started",
+        "description": "SQLite FTS5를 활용한 전문 검색을 구현한다.",
+        "subtasks": [
+          "FTS5 가상 테이블 데이터 동기화 트리거 (엔티티 생성/수정/삭제 시 FTS 테이블 자동 업데이트)",
+          "GET /api/v1/search?q={keyword}&type=all — 통합 검색 API",
+          "검색 대상별 분기: type=task, type=inbox, type=meeting_note, type=decision, type=project, type=link",
+          "검색 결과 하이라이팅 (매칭 키워드 표시)",
+          "한글 검색 지원 확인 (unicode61 토크나이저)",
+          "검색 결과 페이지네이션",
+          "검색 성능 최적화 (p95 < 500ms, 회의록 500건 기준)"
+        ]
+      },
+      {
+        "id": "P4-T6",
+        "title": "통합 검색 UI",
+        "status": "not_started",
+        "description": "전체 통합 검색 화면을 구현한다.",
+        "subtasks": [
+          "검색 페이지 라우트 (/search)",
+          "검색 입력 필드 (실시간 검색 또는 Enter 키 트리거)",
+          "검색 결과를 엔티티별 탭으로 분류 (All, Tasks, Inbox, Meeting Notes, Decisions, Projects, Links)",
+          "각 탭에서 검색 결과 카드 표시 (엔티티 유형별 적절한 표시 형식)",
+          "검색 결과 클릭 시 해당 엔티티 상세 페이지로 이동",
+          "검색어 하이라이트 표시",
+          "검색 결과 없음 상태 처리",
+          "태그 기반 필터 사이드바 (검색 결과를 태그로 추가 필터링)"
+        ]
+      },
+      {
+        "id": "P4-T7",
+        "title": "글로벌 검색 단축키",
+        "status": "not_started",
+        "description": "어느 화면에서든 / 키를 눌러 검색 모달을 열 수 있도록 한다.",
+        "subtasks": [
+          "/ 키 단축키 등록 (입력 필드 포커스 상태에서는 무시)",
+          "검색 모달 (Command Palette 스타일, 화면 상단 중앙)",
+          "모달에서 검색 입력 → 결과 미리보기 (상위 5건)",
+          "결과 항목 클릭 또는 Enter로 상세 이동",
+          "Escape로 모달 닫기"
+        ]
+      },
+      {
+        "id": "P4-T8",
+        "title": "Phase 4 테스트",
+        "status": "not_started",
+        "description": "Phase 4에서 구현한 모든 기능의 테스트를 작성한다.",
+        "subtasks": [
+          "Tag CRUD API 통합 테스트",
+          "엔티티-태그 연결 API 테스트",
+          "FTS5 검색 API 통합 테스트 (한글, 영문, 특수문자, 빈 결과)",
+          "검색 성능 테스트 (시드 데이터 대량 삽입 후 p95 측정)",
+          "태그 필터링 통합 테스트",
+          "태그 삭제 시 연관 관계 해제 테스트"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P4-CC1",
+        "criterion": "모든 엔티티에 태그를 부여하고 필터링할 수 있다",
+        "verification": "Inbox, Task, Project, MeetingNote, Decision, ProjectLink 각각에 태그를 부여하고, 목록 화면에서 해당 태그로 필터링하면 정확한 결과만 표시된다."
+      },
+      {
+        "id": "P4-CC2",
+        "criterion": "태그 자동완성이 동작한다",
+        "verification": "태그 입력 시 기존 태그가 자동완성 추천되고, '새 태그 만들기' 옵션으로 즉석 생성이 가능하다."
+      },
+      {
+        "id": "P4-CC3",
+        "criterion": "통합 검색에서 모든 엔티티를 검색할 수 있다",
+        "verification": "검색 화면에서 키워드 입력 시 Task, Inbox, MeetingNote, Decision, Project, Link에서 매칭되는 결과가 엔티티별로 분류되어 표시된다."
+      },
+      {
+        "id": "P4-CC4",
+        "criterion": "회의록 본문(Markdown)을 전문 검색할 수 있다",
+        "verification": "회의록 본문에 포함된 한글 키워드를 검색하면 해당 회의록이 검색 결과에 표시되고, 매칭 부분이 하이라이트된다."
+      },
+      {
+        "id": "P4-CC5",
+        "criterion": "검색 성능이 요구사항을 충족한다",
+        "verification": "시드 데이터(Task 1만건, 회의록 500건) 삽입 후 검색 API의 p95 응답 시간이 500ms 이내이다."
+      },
+      {
+        "id": "P4-CC6",
+        "criterion": "/ 키 단축키로 검색 모달이 열린다",
+        "verification": "아무 화면에서 / 키를 누르면 검색 모달이 열리고, 검색어 입력 후 결과 미리보기가 표시된다."
+      },
+      {
+        "id": "P4-CC7",
+        "criterion": "시나리오 8.7 (검색으로 과거 자료 찾기)이 완전히 동작한다",
+        "verification": "계획서 8.7의 4단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "FTS5 한글 토크나이저 정확도 부족",
+        "impact": "높음",
+        "mitigation": "unicode61 토크나이저로 기본 구현 후, 한글 검색 품질이 부족하면 trigram 토크나이저(FTS5 trigram 옵션)를 추가하여 부분 문자열 매칭을 지원한다."
+      },
+      {
+        "risk": "FTS5 데이터 동기화 누락",
+        "impact": "중간",
+        "mitigation": "Prisma의 middleware를 사용하여 엔티티 변경 시 FTS 테이블을 자동 동기화하되, 초기 구축 시 전체 재인덱싱 스크립트도 함께 제공한다."
+      },
+      {
+        "risk": "대량 데이터 검색 시 성능 저하",
+        "impact": "중간",
+        "mitigation": "검색 결과 페이지네이션을 적용하고, FTS5 LIMIT 절을 사용하여 쿼리 수준에서 결과를 제한한다."
+      }
+    ],
+    "notes": [
+      "FTS5 한글 검색은 이 프로젝트의 핵심 기능이므로, Phase 0에서 미리 PoC(Proof of Concept)를 수행하는 것을 권장한다.",
+      "태그 컴포넌트는 6개 엔티티에서 재사용되므로, 범용성 있게 설계해야 한다.",
+      "검색 모달(Command Palette)은 VS Code의 Ctrl+P와 유사한 UX를 참고한다.",
+      "계획서에는 명시되지 않았지만, 검색 결과 정렬 옵션(관련도순, 최신순, 이름순)을 추가하는 것이 사용성에 도움이 된다."
+    ]
+  },
+  {
+    "phase": 5,
+    "title": "Decisions Management",
+    "title_ko": "결정사항 관리",
+    "description": "프로젝트 진행 중 주요 결정사항을 수동으로 등록하고, 프로젝트/회의록과 연결하여 타임라인으로 관리한다. 결정 근거, 결정자, 후속 Task와의 연결을 통해 '증거 기반 업무 관리'를 완성한다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 7,
+      "not_started": 7,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "1주 (W10)",
+    "priority": "Medium",
+    "dependencies": [
+      "Phase 1",
+      "Phase 3",
+      "Phase 4"
+    ],
+    "tasks": [
+      {
+        "id": "P5-T1",
+        "title": "Decision CRUD API",
+        "status": "not_started",
+        "description": "결정사항 관리 REST API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/decisions — 목록 (필터: project_id, tag, date_range, meeting_note_id, 정렬: decision_date DESC)",
+          "POST /api/v1/decisions — 생성 (title, content, reason, decided_by, decision_date, source_type, source_link, impact, project_id, meeting_note_id, follow_up_task_ids, tags)",
+          "GET /api/v1/decisions/:id — 상세 (관련 MeetingNote, follow-up Tasks 포함)",
+          "PATCH /api/v1/decisions/:id — 수정",
+          "DELETE /api/v1/decisions/:id — 삭제",
+          "AuditLog 자동 기록"
+        ]
+      },
+      {
+        "id": "P5-T2",
+        "title": "Decision-MeetingNote 연결 API",
+        "status": "not_started",
+        "description": "결정사항과 회의록 간의 M:N 관계를 관리하는 API를 구현한다.",
+        "subtasks": [
+          "Decision 생성/수정 시 meeting_note_id 연결",
+          "MeetingNote 상세에서 관련 Decision 목록 조회",
+          "Decision 상세에서 원본 MeetingNote로 이동 링크"
+        ]
+      },
+      {
+        "id": "P5-T3",
+        "title": "Decision-Task 연결 (Follow-up Tasks)",
+        "status": "not_started",
+        "description": "결정사항에 따른 후속 Task를 연결하는 기능을 구현한다.",
+        "subtasks": [
+          "Decision 생성/수정 시 follow_up_task_ids 연결",
+          "Decision 상세에서 후속 Task 목록 표시 (상태 포함)",
+          "Decision에서 새 후속 Task 직접 생성 기능",
+          "Task 상세에서 '이 Task의 근거 Decision' 표시 (역방향 조회)"
+        ]
+      },
+      {
+        "id": "P5-T4",
+        "title": "Decisions 타임라인 UI",
+        "status": "not_started",
+        "description": "결정사항을 타임라인 형태로 시각화하는 UI를 구현한다.",
+        "subtasks": [
+          "Decisions 전용 페이지 라우트 (/decisions)",
+          "타임라인 뷰 (시간순 세로 배열, 날짜 구분선)",
+          "각 Decision 카드: 제목, 결정일, 결정자, 프로젝트 뱃지, 태그",
+          "프로젝트별 필터 드롭다운",
+          "태그별 필터",
+          "날짜 범위 필터 (DatePicker)",
+          "검색 통합 (키워드 검색)"
+        ]
+      },
+      {
+        "id": "P5-T5",
+        "title": "Decision 생성/수정 UI",
+        "status": "not_started",
+        "description": "결정사항 생성 및 수정 폼을 구현한다.",
+        "subtasks": [
+          "Decision 생성 폼 (제목, 내용, 결정 근거, 결정자, 결정일, 출처 유형, 영향도)",
+          "프로젝트 선택 (필수)",
+          "회의록 연결 (선택, 해당 프로젝트의 회의록 목록에서 선택)",
+          "후속 Task 연결 (선택, 기존 Task 검색 또는 새 Task 생성)",
+          "태그 부여",
+          "Decision 수정 모달 또는 인라인 편집",
+          "Decision 삭제 확인 모달"
+        ]
+      },
+      {
+        "id": "P5-T6",
+        "title": "Project Detail - Decisions 탭 연결",
+        "status": "not_started",
+        "description": "Project Detail 페이지의 Decisions 탭에 해당 프로젝트의 결정사항을 표시한다.",
+        "subtasks": [
+          "Phase 1에서 만든 빈 Decisions 탭에 콘텐츠 채우기",
+          "프로젝트별 Decision 타임라인 표시",
+          "프로젝트 상세에서 직접 Decision 생성",
+          "Overview 탭에 최근 결정사항 3건 표시"
+        ]
+      },
+      {
+        "id": "P5-T7",
+        "title": "Phase 5 테스트",
+        "status": "not_started",
+        "description": "Phase 5에서 구현한 모든 기능의 테스트를 작성한다.",
+        "subtasks": [
+          "Decision CRUD API 통합 테스트",
+          "Decision-MeetingNote 연결 테스트",
+          "Decision-Task (follow-up) 연결 테스트",
+          "타임라인 필터링 테스트 (프로젝트, 태그, 날짜 범위)",
+          "FTS5 검색에 Decision 포함 테스트"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P5-CC1",
+        "criterion": "결정사항을 수동으로 등록할 수 있다",
+        "verification": "Decisions 페이지 또는 Project Detail에서 새 Decision을 생성하여 제목, 내용, 근거, 결정자, 결정일 등을 입력하면, 타임라인에 표시된다."
+      },
+      {
+        "id": "P5-CC2",
+        "criterion": "결정사항과 회의록이 연결된다",
+        "verification": "Decision 생성 시 관련 MeetingNote를 선택하면, Decision 상세에서 원본 회의록 링크가 표시되고, 회의록 상세에서도 관련 Decision이 표시된다."
+      },
+      {
+        "id": "P5-CC3",
+        "criterion": "후속 Task가 연결된다",
+        "verification": "Decision에서 후속 Task를 연결하면, Decision 상세에서 후속 Task 목록(상태 포함)이 표시되고, Task 상세에서 '근거 Decision' 링크가 표시된다."
+      },
+      {
+        "id": "P5-CC4",
+        "criterion": "타임라인이 필터링 가능하다",
+        "verification": "Decisions 타임라인에서 프로젝트, 태그, 날짜 범위로 필터링하면 해당 조건에 맞는 결정사항만 표시된다."
+      },
+      {
+        "id": "P5-CC5",
+        "criterion": "결정사항이 통합 검색에 포함된다",
+        "verification": "검색 화면에서 결정사항 내용에 포함된 키워드를 검색하면 해당 Decision이 검색 결과에 표시된다."
+      },
+      {
+        "id": "P5-CC6",
+        "criterion": "시나리오 8.6 (과거 결정사항 찾기)이 완전히 동작한다",
+        "verification": "계획서 8.6의 5단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "Decision-Task-MeetingNote 간 순환 참조 복잡성",
+        "impact": "낮음",
+        "mitigation": "API 응답에서 관계 엔티티는 1단계 깊이만 포함하고, 깊은 중첩은 별도 API 호출로 처리한다."
+      }
+    ],
+    "notes": [
+      "Decision 자동 추출(회의록에서 LLM으로 추출)은 MVP 제외, v2 이후 검토 사항이다.",
+      "Decision의 source_type은 Meeting, Email, Verbal, Other로 어디에서 결정이 이루어졌는지를 추적한다.",
+      "타임라인 UI는 세로형 타임라인이 가장 직관적이며, 날짜 구분선으로 시간 흐름을 명확히 표현한다."
+    ]
+  },
+  {
+    "phase": 6,
+    "title": "Backup, Restore & Settings Completion",
+    "title_ko": "백업/복구 및 설정 화면 완성",
+    "description": "데이터 안전성을 위한 자동/수동 백업, 복구, JSON Export 기능과, 나머지 Settings 화면을 완성한다. 사용자가 데이터 손실 걱정 없이 WorksOS를 사용할 수 있도록 3중 안전망을 구축한다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 9,
+      "not_started": 9,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "1주 (W11)",
+    "priority": "High",
+    "dependencies": [
+      "Phase 0",
+      "Phase 2"
+    ],
+    "tasks": [
+      {
+        "id": "P6-T1",
+        "title": "자동 백업 구현",
+        "status": "not_started",
+        "description": "node-cron을 사용하여 매일 03:00에 SQLite DB 파일을 자동 백업한다.",
+        "subtasks": [
+          "node-cron 스케줄러 설정 (매일 03:00)",
+          "SQLite DB 파일 복사 (worksos-YYYY-MM-DD-HHmmss.db 형식)",
+          "백업 폴더 자동 생성 (C:\\WorksOS\\backups\\)",
+          "30일 초과 백업 파일 자동 삭제 (보관 기간 정책)",
+          "백업 실행 로그 기록 (Winston)",
+          "백업 실패 시 에러 로깅 및 재시도 (1회)"
+        ]
+      },
+      {
+        "id": "P6-T2",
+        "title": "수동 즉시 백업 API",
+        "status": "not_started",
+        "description": "사용자가 즉시 백업을 실행할 수 있는 API를 구현한다.",
+        "subtasks": [
+          "POST /api/v1/backup/now — 즉시 백업 실행",
+          "GET /api/v1/backup/list — 백업 파일 목록 (파일명, 크기, 생성일)",
+          "백업 진행 중 상태 표시 (202 Accepted → 완료 시 알림)",
+          "동시 백업 요청 방지 (잠금 메커니즘)"
+        ]
+      },
+      {
+        "id": "P6-T3",
+        "title": "백업 복원 API",
+        "status": "not_started",
+        "description": "백업 파일에서 데이터를 복원하는 API를 구현한다.",
+        "subtasks": [
+          "POST /api/v1/backup/restore — 백업 복원 (body: backup_filename)",
+          "복원 전 현재 DB를 worksos.db.before-restore로 자동 백업",
+          "선택한 백업 파일을 활성 DB로 교체",
+          "Prisma 마이그레이션 호환성 검증 (마이그레이션 버전 체크)",
+          "복원 완료 후 서버 자동 재시작 (graceful restart)",
+          "복원 실패 시 원본 DB 자동 복구 (rollback)"
+        ]
+      },
+      {
+        "id": "P6-T4",
+        "title": "JSON Export API",
+        "status": "not_started",
+        "description": "전체 데이터를 JSON 형식으로 Export하는 API를 구현한다.",
+        "subtasks": [
+          "GET /api/v1/export/json — 전체 데이터 JSON Export",
+          "JSON 구조: 엔티티별 배열 ({projects: [...], tasks: [...], ...})",
+          "관계 데이터 포함 (태그, 링크 등)",
+          "대용량 데이터 스트리밍 응답 (메모리 효율)",
+          "파일 다운로드 헤더 설정 (Content-Disposition)"
+        ]
+      },
+      {
+        "id": "P6-T5",
+        "title": "회의록 별도 백업 (Markdown 파일 Export)",
+        "status": "not_started",
+        "description": "회의록을 프로젝트별 폴더 구조의 Markdown 파일로 별도 저장하는 기능을 구현한다.",
+        "subtasks": [
+          "POST /api/v1/export/meeting-notes — 회의록 Markdown Export",
+          "폴더 구조: meeting-notes-export/{project_name}/YYYY-MM-DD-title.md",
+          "ZIP 압축 다운로드",
+          "메타데이터 포함 (YAML frontmatter: 날짜, 참석자, 프로젝트, 태그)"
+        ]
+      },
+      {
+        "id": "P6-T6",
+        "title": "백업/복구 UI",
+        "status": "not_started",
+        "description": "Settings 페이지에 백업/복구 관련 UI를 구현한다.",
+        "subtasks": [
+          "Settings 페이지에 Backup 섹션 추가",
+          "자동 백업 스케줄 표시 (매일 03:00)",
+          "마지막 백업 시간 표시",
+          "'지금 백업' 버튼",
+          "백업 파일 목록 (파일명, 크기, 날짜, 복원 버튼)",
+          "복원 확인 모달 ('현재 데이터가 선택한 백업으로 교체됩니다' 경고)",
+          "JSON Export 다운로드 버튼",
+          "회의록 Export 다운로드 버튼",
+          "'마지막 외부 백업: N일 전' 경고 표시 (계획서 22장 위험 요소 대응)"
+        ]
+      },
+      {
+        "id": "P6-T7",
+        "title": "Settings 화면 완성",
+        "status": "not_started",
+        "description": "남은 Settings 섹션들을 완성한다.",
+        "subtasks": [
+          "Settings 페이지 전체 레이아웃 정리",
+          "섹션 1: Kanban 표시 설정 (Phase 2에서 구현 완료)",
+          "섹션 2: 테마 설정 (Phase 2에서 구현 완료)",
+          "섹션 3: 회의록 템플릿 (Phase 3에서 구현 완료)",
+          "섹션 4: 태그 관리 (Phase 4에서 구현 완료)",
+          "섹션 5: 백업/복구 (이 Phase에서 구현)",
+          "섹션 6: 서버 정보 (포트 번호, DB 경로, 버전 정보)",
+          "섹션 7: 데이터 초기화 (위험 작업, 이중 확인 필요)"
+        ]
+      },
+      {
+        "id": "P6-T8",
+        "title": "키보드 단축키",
+        "status": "not_started",
+        "description": "계획서 15.5의 키보드 단축키를 구현한다.",
+        "subtasks": [
+          "N 키: 새 Inbox Item 생성 모달",
+          "T 키: 새 Task 생성 모달",
+          "/ 키: 글로벌 검색 모달 (Phase 4에서 구현 완료)",
+          "단축키 안내 표시 (? 키 또는 Settings에서 확인)",
+          "입력 필드/모달 활성 시 단축키 비활성화"
+        ]
+      },
+      {
+        "id": "P6-T9",
+        "title": "Phase 6 테스트",
+        "status": "not_started",
+        "description": "Phase 6에서 구현한 모든 기능의 테스트를 작성한다.",
+        "subtasks": [
+          "자동 백업 스케줄러 테스트 (mock 시간으로 트리거 확인)",
+          "수동 백업 API 통합 테스트",
+          "복원 API 통합 테스트 (DB 교체 및 데이터 일관성 검증)",
+          "JSON Export API 테스트 (모든 엔티티 포함 확인)",
+          "백업 파일 30일 자동 삭제 테스트",
+          "복원 실패 시 rollback 테스트"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P6-CC1",
+        "criterion": "자동 백업이 매일 실행된다",
+        "verification": "서버를 03:00을 포함한 시간대에 가동하면, backups/ 폴더에 새 백업 파일이 자동 생성되고, 로그에 백업 성공 기록이 남는다."
+      },
+      {
+        "id": "P6-CC2",
+        "criterion": "수동 즉시 백업이 가능하다",
+        "verification": "Settings → Backup에서 '지금 백업' 버튼을 클릭하면 10초 이내에 새 백업 파일이 생성되고 목록에 표시된다."
+      },
+      {
+        "id": "P6-CC3",
+        "criterion": "백업에서 데이터를 복원할 수 있다",
+        "verification": "백업 파일 목록에서 특정 백업의 '복원' 버튼을 클릭하고 확인하면, 현재 DB가 해당 백업 시점의 데이터로 교체되고, 이전 DB가 .before-restore로 보존된다."
+      },
+      {
+        "id": "P6-CC4",
+        "criterion": "전체 데이터를 JSON으로 Export할 수 있다",
+        "verification": "Settings → Backup에서 'JSON Export' 버튼을 클릭하면 모든 엔티티가 포함된 JSON 파일이 다운로드되고, 해당 JSON을 파싱하면 올바른 데이터 구조가 확인된다."
+      },
+      {
+        "id": "P6-CC5",
+        "criterion": "30일 초과 백업 파일이 자동 삭제된다",
+        "verification": "30일 이상 된 백업 파일이 존재할 때 자동 백업 실행 시 해당 파일이 삭제되고, 30일 이내 파일은 유지된다."
+      },
+      {
+        "id": "P6-CC6",
+        "criterion": "복원 실패 시 원본 데이터가 보존된다",
+        "verification": "손상된 백업 파일로 복원을 시도하면 복원이 실패하고, 원본 DB 데이터가 그대로 유지되며, 에러 메시지가 표시된다."
+      },
+      {
+        "id": "P6-CC7",
+        "criterion": "키보드 단축키가 동작한다",
+        "verification": "N 키를 누르면 Inbox 생성 모달이 열리고, T 키를 누르면 Task 생성 모달이 열린다. 입력 필드에 포커스 중일 때는 단축키가 동작하지 않는다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "SQLite 파일 복사 중 데이터 손상",
+        "impact": "높음",
+        "mitigation": "SQLite의 .backup 명령 또는 WAL 체크포인트 후 파일 복사를 사용하여 원자적 백업을 보장한다. fs.copyFile로 단순 복사하지 않는다."
+      },
+      {
+        "risk": "복원 후 서버 재시작 실패",
+        "impact": "높음",
+        "mitigation": "graceful shutdown → DB 파일 교체 → Prisma 클라이언트 재연결 순서를 준수하고, 재시작 실패 시 자동 rollback 후 이전 DB 복구한다."
+      },
+      {
+        "risk": "대용량 JSON Export 메모리 부족",
+        "impact": "낮음",
+        "mitigation": "스트리밍 JSON 직렬화를 사용하여 전체 데이터를 메모리에 올리지 않고 청크 단위로 응답한다."
+      }
+    ],
+    "notes": [
+      "이 Phase는 계획서에서 E11(Backup & Restore)과 E10(Settings)에 해당하며, 원래 Phase에는 명시적으로 분리되지 않았으나 데이터 안전성은 핵심 요구사항이므로 별도 Phase로 분리함.",
+      "SQLite 백업 시 반드시 PRAGMA wal_checkpoint(TRUNCATE) 후 파일 복사하거나, SQLite Online Backup API를 사용해야 한다.",
+      "계획서 22장의 '사용자가 백업을 잊고 외장 저장 안 함' 위험에 대응하여, UI에 마지막 외부 백업 경고를 표시하는 기능을 추가함.",
+      "E12(Auth 간소화)는 계획서 13.4에서 '별도의 인증 과정 없음'으로 확정되었으므로 구현하지 않는다."
+    ]
+  },
+  {
+    "phase": 7,
+    "title": "QA, Deployment Packaging & Documentation",
+    "title_ko": "QA, 배포 패키징 및 문서화",
+    "description": "전체 기능에 대한 E2E 테스트, 버그 수정, 성능 검증, 배포 패키지(Docker/PM2) 작성, 사용자 매뉴얼 및 운영 가이드를 작성한다. 이 Phase가 완료되면 제품을 실제 운영 환경에 배포할 수 있다.",
+    "status": "not_started",
+    "status_legend": {
+      "not_started": "시작 전",
+      "in_progress": "진행 중",
+      "completed": "완료",
+      "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+      "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+    },
+    "progress_summary": {
+      "total_tasks": 11,
+      "not_started": 11,
+      "in_progress": 0,
+      "completed": 0,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "estimated_duration": "1~2주 (W12, 필요 시 W13)",
+    "priority": "Critical",
+    "dependencies": [
+      "Phase 0",
+      "Phase 1",
+      "Phase 2",
+      "Phase 3",
+      "Phase 4",
+      "Phase 5",
+      "Phase 6"
+    ],
+    "tasks": [
+      {
+        "id": "P7-T1",
+        "title": "E2E 테스트 작성 (Playwright)",
+        "status": "not_started",
+        "description": "계획서 8장의 7개 사용자 시나리오를 Playwright E2E 테스트로 자동화한다.",
+        "subtasks": [
+          "Playwright 설치 및 설정",
+          "테스트 환경 설정 (테스트 DB 자동 초기화, 시드 데이터)",
+          "E2E 시나리오 1: Teams로 업무가 들어온 경우 (8.1)",
+          "E2E 시나리오 2: Inbox Item을 Task로 전환 (8.2)",
+          "E2E 시나리오 3: 오늘 할 일 확인 (8.3)",
+          "E2E 시나리오 4: 프로젝트별 업무 확인 (8.4)",
+          "E2E 시나리오 5: 회의록 작성 (8.5)",
+          "E2E 시나리오 6: 과거 결정사항 찾기 (8.6)",
+          "E2E 시나리오 7: 검색으로 과거 자료 찾기 (8.7)",
+          "추가 시나리오: 백업 및 복원 흐름",
+          "추가 시나리오: 다크모드 전환"
+        ]
+      },
+      {
+        "id": "P7-T2",
+        "title": "전체 QA 및 버그 수정",
+        "status": "not_started",
+        "description": "모든 화면을 수동으로 테스트하고 발견된 버그를 수정한다.",
+        "subtasks": [
+          "8개 주요 화면 전체 수동 탐색 테스트",
+          "크로스 브라우저 테스트 (Chrome, Edge, Firefox)",
+          "반응형 테스트 (1280px, 1024px 브레이크포인트)",
+          "다크모드 전체 화면 색상 확인",
+          "에지 케이스 테스트 (빈 데이터, 대량 데이터, 특수문자, 초장문 입력)",
+          "접근성 기본 점검 (키보드 탐색, 색 대비)",
+          "버그 수정 및 검증"
+        ]
+      },
+      {
+        "id": "P7-T3",
+        "title": "성능 검증",
+        "status": "not_started",
+        "description": "비기능 요구사항(NFR)에 명시된 성능 기준을 검증한다.",
+        "subtasks": [
+          "API 응답 시간 측정 (p95 < 200ms 확인)",
+          "검색 API 성능 (p95 < 500ms, 회의록 500건 + Task 1만건 기준)",
+          "페이지 초기 로딩 시간 (2초 이내, 캐시 후 1초 이내)",
+          "Kanban 드래그 반응 시간 (< 100ms)",
+          "SQLite DB 크기 확인 (5년 누적 추정 시뮬레이션)",
+          "성능 미달 항목 최적화 (인덱스 추가, 쿼리 최적화, lazy loading 등)"
+        ]
+      },
+      {
+        "id": "P7-T4",
+        "title": "Docker 배포 패키지",
+        "status": "not_started",
+        "description": "Docker를 사용한 1줄 설치/실행 환경을 구성한다.",
+        "subtasks": [
+          "Dockerfile 작성 (Node.js 20 LTS 기반, 멀티 스테이지 빌드)",
+          "docker-compose.yml 작성 (단일 서비스, 볼륨 마운트: data/, backups/, logs/)",
+          ".env.example 작성 (PORT, DB_PATH, BACKUP_DIR, LOG_DIR 등)",
+          "install.bat 작성 (Windows 원클릭 설치 스크립트)",
+          "Docker 이미지 빌드 및 실행 테스트",
+          "PC 부팅 시 자동 시작 스크립트 (Windows 작업 스케줄러 등록)"
+        ]
+      },
+      {
+        "id": "P7-T5",
+        "title": "PM2 대체 배포 (Docker 없이)",
+        "status": "not_started",
+        "description": "Docker 설치가 어려운 환경을 위한 PM2 직접 실행 옵션을 제공한다.",
+        "subtasks": [
+          "ecosystem.config.js (PM2 설정 파일)",
+          "install-no-docker.bat (Node.js 환경 설치 스크립트)",
+          "npm install --production + Prisma migrate + PM2 start 자동화",
+          "PM2 로그 관리 설정",
+          "PM2 startup 등록 (PC 부팅 시 자동 실행)"
+        ]
+      },
+      {
+        "id": "P7-T6",
+        "title": "Frontend 프로덕션 빌드 최적화",
+        "status": "not_started",
+        "description": "프론트엔드 프로덕션 빌드를 최적화한다.",
+        "subtasks": [
+          "Vite build 최적화 (코드 분할, 트리 셰이킹, 압축)",
+          "정적 에셋 캐싱 설정 (해시 파일명)",
+          "Express static 미들웨어로 빌드 결과물 서빙",
+          "SPA fallback 설정 (React Router의 브라우저 히스토리 모드 지원)",
+          "빌드 결과물 크기 확인 (과도하게 큰 청크 분할)"
+        ]
+      },
+      {
+        "id": "P7-T7",
+        "title": "업데이트 절차 구현",
+        "status": "not_started",
+        "description": "새 버전으로 업데이트하는 절차를 자동화한다.",
+        "subtasks": [
+          "update.bat 작성 (백업 → 이미지 교체 → Prisma migrate → 재시작)",
+          "버전 정보 API (GET /api/v1/version)",
+          "업데이트 전 자동 백업 실행",
+          "Prisma migrate deploy 자동 실행 (마이그레이션 호환성)"
+        ]
+      },
+      {
+        "id": "P7-T8",
+        "title": "사용자 매뉴얼 작성",
+        "status": "not_started",
+        "description": "비개발자 사용자를 위한 사용 매뉴얼을 작성한다.",
+        "subtasks": [
+          "설치 가이드 (Docker / PM2 양쪽)",
+          "기본 사용법 (Inbox → Task → Kanban 워크플로우)",
+          "각 화면별 사용 가이드 (스크린샷 포함)",
+          "FAQ (자주 묻는 질문)",
+          "트러블슈팅 가이드 (서버 안 올라가는 경우, 백업 복원 등)"
+        ]
+      },
+      {
+        "id": "P7-T9",
+        "title": "운영 매뉴얼 작성",
+        "status": "not_started",
+        "description": "시스템 운영에 필요한 매뉴얼을 작성한다.",
+        "subtasks": [
+          "서버 시작/중지/재시작 방법",
+          "백업/복구 절차",
+          "로그 확인 방법",
+          "포트 번호 변경 방법",
+          "재해 복구 절차 (호스트 PC 고장 시)",
+          "업데이트 절차"
+        ]
+      },
+      {
+        "id": "P7-T10",
+        "title": "OpenAPI 3.0 문서 생성",
+        "status": "not_started",
+        "description": "전체 API에 대한 Swagger 문서를 생성한다.",
+        "subtasks": [
+          "swagger-jsdoc 또는 수동 OpenAPI 3.0 YAML 작성",
+          "swagger-ui-express로 /api/docs에서 접근 가능하도록 설정",
+          "모든 엔드포인트에 대한 요청/응답 스키마 문서화",
+          "에러 응답 포맷 문서화"
+        ]
+      },
+      {
+        "id": "P7-T11",
+        "title": "UI 텍스트 사전(dictionary) 분리",
+        "status": "not_started",
+        "description": "계획서 15.6의 국제화(i18n) 확장 대비를 위해 UI 텍스트를 사전 파일로 분리한다.",
+        "subtasks": [
+          "모든 UI 텍스트를 ko.json 사전 파일로 추출",
+          "컴포넌트에서 사전 파일 참조 방식으로 변경",
+          "향후 en.json 등 추가 시 언어 전환 가능한 구조 확보",
+          "날짜/숫자 포맷의 locale 설정 분리"
+        ]
+      }
+    ],
+    "completion_criteria": [
+      {
+        "id": "P7-CC1",
+        "criterion": "7개 핵심 E2E 시나리오가 모두 통과한다",
+        "verification": "npx playwright test 실행 시 계획서 8장의 7개 시나리오를 포함한 모든 E2E 테스트가 통과한다."
+      },
+      {
+        "id": "P7-CC2",
+        "criterion": "성능 요구사항을 충족한다",
+        "verification": "대량 시드 데이터(Task 1만건, 회의록 500건) 환경에서 API 응답 p95 < 200ms, 검색 p95 < 500ms, 페이지 로딩 < 2초, Kanban 드래그 < 100ms가 모두 충족된다."
+      },
+      {
+        "id": "P7-CC3",
+        "criterion": "Docker로 1줄 설치가 가능하다",
+        "verification": "깨끗한 Windows 10 환경에서 Docker Desktop 설치 후 install.bat 더블클릭으로 WorksOS가 자동 빌드·실행되고, 브라우저에서 http://localhost:3080 접속 시 Dashboard가 표시된다."
+      },
+      {
+        "id": "P7-CC4",
+        "criterion": "PM2로도 설치·실행이 가능하다",
+        "verification": "Docker 없는 환경에서 Node.js 20 설치 후 install-no-docker.bat 실행으로 WorksOS가 PM2로 시작되고, 브라우저에서 접속 가능하다."
+      },
+      {
+        "id": "P7-CC5",
+        "criterion": "크로스 브라우저 호환성이 확인된다",
+        "verification": "Chrome, Edge, Firefox 최신 버전에서 모든 핵심 기능이 정상 동작하고, 시각적 깨짐이 없다."
+      },
+      {
+        "id": "P7-CC6",
+        "criterion": "OpenAPI 문서가 접근 가능하다",
+        "verification": "브라우저에서 http://localhost:3080/api/docs 접속 시 Swagger UI가 표시되고, 모든 엔드포인트를 확인·테스트할 수 있다."
+      },
+      {
+        "id": "P7-CC7",
+        "criterion": "사용자 매뉴얼과 운영 매뉴얼이 완성된다",
+        "verification": "비개발자가 매뉴얼만 보고 설치, 기본 사용, 백업/복구를 수행할 수 있다."
+      },
+      {
+        "id": "P7-CC8",
+        "criterion": "업데이트 절차가 정상 동작한다",
+        "verification": "update.bat 실행 시 자동 백업 → 새 버전 배포 → DB 마이그레이션 → 재시작이 순차적으로 완료되고, 기존 데이터가 유지된다."
+      },
+      {
+        "id": "P7-CC9",
+        "criterion": "PC 부팅 시 자동 시작된다",
+        "verification": "호스트 PC를 재부팅한 후 별도 조작 없이 WorksOS 서버가 자동 시작되어 브라우저에서 접속 가능하다."
+      },
+      {
+        "id": "P7-CC10",
+        "criterion": "배포 패키지가 완성된다",
+        "verification": "계획서 17.1의 산출물 패키지 구조(docker-compose.yml, .env.example, README.md, install.bat, 소스코드)가 모두 포함된 릴리스 패키지가 생성된다."
+      }
+    ],
+    "risks": [
+      {
+        "risk": "E2E 테스트 환경 불안정",
+        "impact": "중간",
+        "mitigation": "Playwright의 headless 모드를 기본으로 사용하고, 불안정한 테스트는 retry 옵션을 설정한다. CI 환경에서의 안정성도 확인한다."
+      },
+      {
+        "risk": "Docker 이미지 크기 과대",
+        "impact": "낮음",
+        "mitigation": "멀티 스테이지 빌드로 런타임 이미지에 devDependencies를 포함하지 않고, Alpine 베이스 이미지를 사용한다."
+      },
+      {
+        "risk": "Windows 작업 스케줄러 권한 이슈",
+        "impact": "중간",
+        "mitigation": "관리자 권한 없이도 등록 가능한 사용자 수준 작업을 사용하고, 실패 시 수동 등록 가이드를 매뉴얼에 포함한다."
+      }
+    ],
+    "notes": [
+      "이 Phase는 제품 출시를 위한 최종 관문이며, 여기서 발견된 버그나 성능 이슈에 따라 기간이 1~2주 변동될 수 있다.",
+      "UI 텍스트 사전 분리는 계획서에 명시된 국제화 확장 대비 조치이다. MVP에서는 한국어 단일이지만, 구조를 미리 갖추면 향후 확장이 용이하다.",
+      "OpenAPI 문서 자동 생성은 계획서 21.2 요구 산출물에 포함되어 있다.",
+      "ERD 다이어그램은 Prisma의 prisma-erd-generator 또는 dbdiagram.io를 사용하여 자동 생성한다."
+    ]
+  }
+];
+
+    let currentPhases = window.__INITIAL_DATA__ || [];
+    
+    // Status translation for human readable
+    const statusLabels = {
+      'not_started': '대기',
+      'in_progress': '진행중',
+      'completed': '완료',
+      'blocked': '차단됨',
+      'skipped': '건너뜀'
+    };
+
+    // Dark/Light Theme Control
+    const themeBtn = document.getElementById('themeBtn');
+    
+    // Default theme check
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+      themeBtn.textContent = '☀️ Light Mode';
+    }
+
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      if (document.body.classList.contains('light-theme')) {
+        localStorage.setItem('theme', 'light');
+        themeBtn.textContent = '☀️ Light Mode';
+      } else {
+        localStorage.setItem('theme', 'dark');
+        themeBtn.textContent = '🌙 Dark Mode';
+      }
+    });
+
+    // File Drag & Drop Control
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => {
+      handleFiles(fileInput.files);
+    });
+
+    function handleFiles(files) {
+      let filesToRead = Array.from(files).filter(f => f.name.endsWith('.json'));
+      if (filesToRead.length === 0) return;
+
+      let loadedCount = 0;
+      filesToRead.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (typeof data.phase === 'number') {
+              // Replace or add data
+              const existingIdx = currentPhases.findIndex(p => p.phase === data.phase);
+              if (existingIdx !== -1) {
+                currentPhases[existingIdx] = data;
+              } else {
+                currentPhases.push(data);
+              }
+            }
+          } catch (err) {
+            console.error('Error parsing uploaded JSON:', err);
+          }
+          loadedCount++;
+          if (loadedCount === filesToRead.length) {
+            currentPhases.sort((a, b) => a.phase - b.phase);
+            renderDashboard();
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // Try auto fetch if served locally via server
+    async function tryFetchPhases() {
+      try {
+        const fetched = [];
+        for (let i = 0; i <= 7; i++) {
+          const res = await fetch('./phase_' + i + '.json');
+          if (res.ok) {
+            const json = await res.json();
+            fetched.push(json);
+          }
+        }
+        if (fetched.length > 0) {
+          currentPhases = fetched.sort((a, b) => a.phase - b.phase);
+          renderDashboard();
+        }
+      } catch (e) {
+        // Silent fall back to embedded data
+      }
+    }
+
+    // Main Render Function
+    function renderDashboard() {
+      const grid = document.getElementById('phasesGrid');
+      const timeline = document.getElementById('timelineMap');
+      grid.innerHTML = '';
+      timeline.innerHTML = '';
+
+      let totalTasks = 0;
+      let completedTasks = 0;
+
+      currentPhases.forEach((phaseData) => {
+        // Count tasks
+        const tCount = phaseData.tasks ? phaseData.tasks.length : 0;
+        const cCount = phaseData.tasks ? phaseData.tasks.filter(t => t.status === 'completed').length : 0;
+        totalTasks += tCount;
+        completedTasks += cCount;
+
+        // 1. Create Timeline Step
+        const step = document.createElement('div');
+        const isActive = phaseData.status === 'in_progress' ? 'active-step' : '';
+        step.className = 'timeline-step ' + isActive;
+        step.onclick = () => {
+          const cardEl = document.getElementById('phase-card-' + phaseData.phase);
+          if (cardEl) {
+            cardEl.scrollIntoView({ behavior: 'smooth' });
+            // Highlight temporarily
+            cardEl.style.outline = '2px solid var(--color-inprogress)';
+            setTimeout(() => cardEl.style.outline = 'none', 1500);
+          }
+        };
+
+        const badgeClass = 'badge-' + phaseData.status.replace('_', '');
+        const titleKoOrEn = phaseData.title_ko || phaseData.title;
+        const statusLabel = statusLabels[phaseData.status] || phaseData.status;
+
+        step.innerHTML = `
+          <span class="step-num">PHASE ${phaseData.phase}</span>
+          <span class="step-title" title="${titleKoOrEn}">${titleKoOrEn}</span>
+          <span class="step-badge ${badgeClass}">${statusLabel}</span>
+        `;
+        timeline.appendChild(step);
+
+        // 2. Create Grid Card
+        const card = document.createElement('div');
+        card.id = 'phase-card-' + phaseData.phase;
+        const isProgressBorder = phaseData.status === 'in_progress' ? 'inprogress-border' : '';
+        card.className = 'phase-card ' + isProgressBorder;
+
+        const progressPercent = tCount > 0 ? Math.round((cCount / tCount) * 100) : 0;
+
+        // Render tasks HTML
+        let tasksHtml = '';
+        if (phaseData.tasks && phaseData.tasks.length > 0) {
+          phaseData.tasks.forEach((task, tIdx) => {
+            const bulletClass = 'bullet-' + task.status.replace('_', '');
+            
+            // Subtasks if exist
+            let subtasksHtml = '';
+            if (task.subtasks && task.subtasks.length > 0) {
+              const subItems = task.subtasks.map(sub => `
+                <li class="subtask-item">
+                  <span class="subtask-bullet"></span>
+                  <span>${sub}</span>
+                </li>
+              `).join('');
+
+              subtasksHtml = `
+                <div class="task-desc">${task.description || ''}</div>
+                <div class="subtasks-title">세부 항목</div>
+                <ul class="subtask-list">
+                  ${subItems}
+                </ul>
+              `;
+            } else if (task.description) {
+              subtasksHtml = `<div class="task-desc">${task.description}</div>`;
+            }
+
+            const tStatusLabel = statusLabels[task.status] || task.status;
+
+            tasksHtml += `
+              <div class="task-item">
+                <div class="task-header" onclick="toggleAccordion('task-content-${phaseData.phase}-${tIdx}')">
+                  <div class="task-left">
+                    <span class="task-bullet ${bulletClass}"></span>
+                    <span class="task-title" title="${task.title}">${task.title}</span>
+                  </div>
+                  <span class="task-status-text">${tStatusLabel}</span>
+                </div>
+                <div class="task-content" id="task-content-${phaseData.phase}-${tIdx}">
+                  ${subtasksHtml || '<div class="task-desc">상세 설명이 없습니다.</div>'}
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          tasksHtml = '<div style="font-size: 0.875rem; color: var(--text-muted); text-align: center; padding: 1rem;">태스크가 아직 등록되지 않았습니다.</div>';
+        }
+
+        const barColor = phaseData.status === 'completed' ? 'var(--color-completed)' : 'var(--color-inprogress)';
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-phase-num">Phase ${phaseData.phase}</span>
+              <h3 class="card-title" title="${titleKoOrEn}">${titleKoOrEn}</h3>
+            </div>
+            <span class="card-badge ${badgeClass}">${statusLabel}</span>
+          </div>
+          <p class="card-desc">${phaseData.description || '설명이 작성되지 않았습니다.'}</p>
+          
+          <div class="card-progress-section">
+            <div class="progress-text-row">
+              <span>작업 완료율</span>
+              <span>${cCount} / ${tCount} (&nbsp;${progressPercent}%)</span>
+            </div>
+            <div class="progress-bar-bg" style="height: 8px;">
+              <div class="progress-bar-fill" style="width: ${progressPercent}%; background-color: ${barColor}"></div>
+            </div>
+          </div>
+
+          <div class="task-list">
+            ${tasksHtml}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Update Top Stats
+      const overallPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      document.getElementById('overallPercent').textContent = overallPercent + '%';
+      document.getElementById('taskCounts').textContent = completedTasks + ' / ' + totalTasks;
+      document.getElementById('overallProgressBar').style.width = overallPercent + '%';
+    }
+
+    function toggleAccordion(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.toggle('show');
+      }
+    }
+
+    // Start Dashboard
+    renderDashboard();
+    tryFetchPhases();
+  </script>
+</body>
+</html>

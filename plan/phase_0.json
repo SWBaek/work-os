@@ -3,7 +3,7 @@
   "title": "Project Foundation & Infrastructure Setup",
   "title_ko": "프로젝트 기반 및 인프라 셋업",
   "description": "개발에 앞서 모노레포 프로젝트 구조, 기술 스택, 데이터베이스 스키마, 공통 유틸리티, CI/CD 기초, 개발 환경을 구성한다. 이 Phase가 완료되어야 이후 모든 Phase의 개발이 원활하게 진행된다.",
-  "status": "in_progress",
+  "status": "completed",
   "status_legend": {
     "not_started": "시작 전",
     "in_progress": "진행 중",
@@ -13,9 +13,9 @@
   },
   "progress_summary": {
     "total_tasks": 7,
-    "not_started": 6,
-    "in_progress": 1,
-    "completed": 0,
+    "not_started": 0,
+    "in_progress": 0,
+    "completed": 7,
     "blocked": 0,
     "skipped": 0
   },
@@ -26,7 +26,7 @@
     {
       "id": "P0-T1",
       "title": "모노레포 프로젝트 초기화",
-      "status": "not_started",
+      "status": "completed",
       "description": "apps/server, apps/web, packages/shared 구조로 모노레포를 생성한다. pnpm workspace 또는 npm workspace를 사용한다.",
       "subtasks": [
         "루트 package.json 및 workspace 설정",
@@ -40,7 +40,7 @@
     {
       "id": "P0-T2",
       "title": "백엔드 기본 프레임워크 구성",
-      "status": "not_started",
+      "status": "completed",
       "description": "Express.js 서버, 미들웨어 체인, 에러 핸들링, 로깅(Winston) 기본 구조를 완성한다.",
       "subtasks": [
         "Express 서버 엔트리 포인트 (server.ts)",
@@ -55,7 +55,7 @@
     {
       "id": "P0-T3",
       "title": "데이터베이스 스키마 설계 및 Prisma 설정",
-      "status": "not_started",
+      "status": "completed",
       "description": "계획서 7장의 전체 데이터 모델을 Prisma 스키마로 작성하고, 초기 마이그레이션을 실행한다.",
       "subtasks": [
         "Prisma 설치 및 SQLite 프로바이더 설정",
@@ -64,13 +64,13 @@
         "인덱스 정의 (계획서 7.3 참조)",
         "초기 마이그레이션 실행 및 검증",
         "Prisma Client 생성 및 타입 확인",
-        "FTS5 가상 테이블 생성 SQL 스크립트 (task_fts, meeting_note_fts, inbox_fts, decision_fts)"
+        "seed.ts에 FTS5 가상 테이블 및 트리거 자동 생성 로직 통합"
       ]
     },
     {
       "id": "P0-T4",
       "title": "공유 타입 및 유틸리티 패키지",
-      "status": "not_started",
+      "status": "completed",
       "description": "프론트엔드와 백엔드에서 공통으로 사용하는 타입 정의와 Zod 스키마를 packages/shared에 작성한다.",
       "subtasks": [
         "ENUM 타입 정의 (TaskStatus, Priority, InboxStatus, ProjectStatus, SourceType, LinkType, ThemeType 등)",
@@ -83,7 +83,7 @@
     {
       "id": "P0-T5",
       "title": "프론트엔드 기본 환경 구성",
-      "status": "not_started",
+      "status": "completed",
       "description": "React 앱의 기본 구조, 라우팅, 상태관리, UI 라이브러리를 셋업한다.",
       "subtasks": [
         "Vite 설정 (proxy, alias 등)",
@@ -99,7 +99,7 @@
     {
       "id": "P0-T6",
       "title": "시드 데이터 스크립트",
-      "status": "not_started",
+      "status": "completed",
       "description": "개발 및 QA 환경에서 사용할 시드 데이터를 생성하는 스크립트를 작성한다.",
       "subtasks": [
         "Project 5개 (다양한 상태, Sub Project 포함)",
@@ -115,7 +115,7 @@
     {
       "id": "P0-T7",
       "title": "개발 환경 편의 설정",
-      "status": "in_progress",
+      "status": "completed",
       "description": "개발 생산성을 높이기 위한 도구와 스크립트를 설정한다.",
       "subtasks": [
         "nodemon 또는 tsx watch 설정 (백엔드 핫 리로드)",
@@ -140,7 +140,7 @@
     {
       "id": "P0-CC3",
       "criterion": "FTS5 가상 테이블이 정상 동작한다",
-      "verification": "시드 데이터 삽입 후 FTS5 테이블에서 한글·영문 검색이 동작하는 SQL 쿼리를 실행하여 결과가 반환된다."
+      "verification": "npx prisma db seed 실행 시 데이터 시딩과 함께 FTS5 가상 테이블 및 트리거가 자동 구축되며, task_fts 등 가상 테이블에 대한 영어/한글 검색 쿼리가 즉시 정상적으로 작동하여 데이터를 반환한다."
     },
     {
       "id": "P0-CC4",
