@@ -1,0 +1,201 @@
+{
+  "phase": 4,
+  "title": "Tags & Search",
+  "title_ko": "태그 및 검색",
+  "description": "모든 엔티티에 태그를 부여하고, SQLite FTS5를 활용한 전체 통합 검색 및 엔티티별 검색을 구현한다.",
+  "status": "not_started",
+  "status_legend": {
+    "not_started": "시작 전",
+    "in_progress": "진행 중",
+    "completed": "완료",
+    "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+    "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+  },
+  "progress_summary": {
+    "total_tasks": 8,
+    "not_started": 8,
+    "in_progress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "estimated_duration": "2주 (W8 ~ W9)",
+  "priority": "High",
+  "dependencies": [
+    "Phase 1",
+    "Phase 3"
+  ],
+  "tasks": [
+    {
+      "id": "P4-T1",
+      "title": "Tag CRUD API",
+      "status": "not_started",
+      "description": "태그 관리 REST API를 구현한다.",
+      "subtasks": [
+        "GET /api/v1/tags — 전체 태그 목록 (사용 횟수 포함)",
+        "POST /api/v1/tags — 생성 (name, color, description)",
+        "PATCH /api/v1/tags/:id — 수정",
+        "DELETE /api/v1/tags/:id — 삭제 (연결된 엔티티에서 자동 해제)",
+        "태그 이름 UNIQUE 검증",
+        "태그 자동완성 API (GET /api/v1/tags/autocomplete?q=...)"
+      ]
+    },
+    {
+      "id": "P4-T2",
+      "title": "엔티티-태그 연결 API",
+      "status": "not_started",
+      "description": "모든 엔티티(Inbox, Task, Project, MeetingNote, Decision, ProjectLink)에 태그를 부여/해제하는 API를 구현한다.",
+      "subtasks": [
+        "POST /api/v1/{entity_type}/{id}/tags — 태그 연결 (body: tag_ids[])",
+        "DELETE /api/v1/{entity_type}/{id}/tags/:tag_id — 태그 해제",
+        "엔티티 CRUD API에 tags 필드 통합 (생성/수정 시 태그 함께 처리)",
+        "태그 기반 필터링 지원 (기존 목록 API에 tag 쿼리 파라미터 추가)",
+        "다중 태그 AND/OR 필터 지원 (예: ?tags=tag1,tag2&tag_mode=and)"
+      ]
+    },
+    {
+      "id": "P4-T3",
+      "title": "태그 관리 UI",
+      "status": "not_started",
+      "description": "태그 생성, 편집, 삭제 UI를 구현한다.",
+      "subtasks": [
+        "Settings 페이지에 태그 관리 섹션 추가",
+        "태그 목록 (이름, 색상 프리뷰, 사용 횟수)",
+        "태그 생성 모달 (이름, 색상 선택기 — 프리셋 색상 + HEX 입력)",
+        "태그 수정/삭제",
+        "태그 삭제 시 '이 태그가 N개 항목에 사용 중입니다' 경고"
+      ]
+    },
+    {
+      "id": "P4-T4",
+      "title": "태그 선택 공통 컴포넌트",
+      "status": "not_started",
+      "description": "모든 엔티티 폼에서 재사용할 수 있는 태그 선택 컴포넌트를 구현한다.",
+      "subtasks": [
+        "다중 선택 태그 입력 컴포넌트 (combobox 스타일)",
+        "기존 태그 검색 자동완성",
+        "새 태그 즉석 생성 ('새 태그 만들기' 옵션)",
+        "선택된 태그 뱃지 표시 (색상 포함)",
+        "기존 Inbox/Task/Project/MeetingNote 폼에 태그 컴포넌트 통합"
+      ]
+    },
+    {
+      "id": "P4-T5",
+      "title": "FTS5 전문 검색 구현",
+      "status": "not_started",
+      "description": "SQLite FTS5를 활용한 전문 검색을 구현한다.",
+      "subtasks": [
+        "FTS5 가상 테이블 데이터 동기화 트리거 (엔티티 생성/수정/삭제 시 FTS 테이블 자동 업데이트)",
+        "GET /api/v1/search?q={keyword}&type=all — 통합 검색 API",
+        "검색 대상별 분기: type=task, type=inbox, type=meeting_note, type=decision, type=project, type=link",
+        "검색 결과 하이라이팅 (매칭 키워드 표시)",
+        "한글 검색 지원 확인 (unicode61 토크나이저)",
+        "검색 결과 페이지네이션",
+        "검색 성능 최적화 (p95 < 500ms, 회의록 500건 기준)"
+      ]
+    },
+    {
+      "id": "P4-T6",
+      "title": "통합 검색 UI",
+      "status": "not_started",
+      "description": "전체 통합 검색 화면을 구현한다.",
+      "subtasks": [
+        "검색 페이지 라우트 (/search)",
+        "검색 입력 필드 (실시간 검색 또는 Enter 키 트리거)",
+        "검색 결과를 엔티티별 탭으로 분류 (All, Tasks, Inbox, Meeting Notes, Decisions, Projects, Links)",
+        "각 탭에서 검색 결과 카드 표시 (엔티티 유형별 적절한 표시 형식)",
+        "검색 결과 클릭 시 해당 엔티티 상세 페이지로 이동",
+        "검색어 하이라이트 표시",
+        "검색 결과 없음 상태 처리",
+        "태그 기반 필터 사이드바 (검색 결과를 태그로 추가 필터링)"
+      ]
+    },
+    {
+      "id": "P4-T7",
+      "title": "글로벌 검색 단축키",
+      "status": "not_started",
+      "description": "어느 화면에서든 / 키를 눌러 검색 모달을 열 수 있도록 한다.",
+      "subtasks": [
+        "/ 키 단축키 등록 (입력 필드 포커스 상태에서는 무시)",
+        "검색 모달 (Command Palette 스타일, 화면 상단 중앙)",
+        "모달에서 검색 입력 → 결과 미리보기 (상위 5건)",
+        "결과 항목 클릭 또는 Enter로 상세 이동",
+        "Escape로 모달 닫기"
+      ]
+    },
+    {
+      "id": "P4-T8",
+      "title": "Phase 4 테스트",
+      "status": "not_started",
+      "description": "Phase 4에서 구현한 모든 기능의 테스트를 작성한다.",
+      "subtasks": [
+        "Tag CRUD API 통합 테스트",
+        "엔티티-태그 연결 API 테스트",
+        "FTS5 검색 API 통합 테스트 (한글, 영문, 특수문자, 빈 결과)",
+        "검색 성능 테스트 (시드 데이터 대량 삽입 후 p95 측정)",
+        "태그 필터링 통합 테스트",
+        "태그 삭제 시 연관 관계 해제 테스트"
+      ]
+    }
+  ],
+  "completion_criteria": [
+    {
+      "id": "P4-CC1",
+      "criterion": "모든 엔티티에 태그를 부여하고 필터링할 수 있다",
+      "verification": "Inbox, Task, Project, MeetingNote, Decision, ProjectLink 각각에 태그를 부여하고, 목록 화면에서 해당 태그로 필터링하면 정확한 결과만 표시된다."
+    },
+    {
+      "id": "P4-CC2",
+      "criterion": "태그 자동완성이 동작한다",
+      "verification": "태그 입력 시 기존 태그가 자동완성 추천되고, '새 태그 만들기' 옵션으로 즉석 생성이 가능하다."
+    },
+    {
+      "id": "P4-CC3",
+      "criterion": "통합 검색에서 모든 엔티티를 검색할 수 있다",
+      "verification": "검색 화면에서 키워드 입력 시 Task, Inbox, MeetingNote, Decision, Project, Link에서 매칭되는 결과가 엔티티별로 분류되어 표시된다."
+    },
+    {
+      "id": "P4-CC4",
+      "criterion": "회의록 본문(Markdown)을 전문 검색할 수 있다",
+      "verification": "회의록 본문에 포함된 한글 키워드를 검색하면 해당 회의록이 검색 결과에 표시되고, 매칭 부분이 하이라이트된다."
+    },
+    {
+      "id": "P4-CC5",
+      "criterion": "검색 성능이 요구사항을 충족한다",
+      "verification": "시드 데이터(Task 1만건, 회의록 500건) 삽입 후 검색 API의 p95 응답 시간이 500ms 이내이다."
+    },
+    {
+      "id": "P4-CC6",
+      "criterion": "/ 키 단축키로 검색 모달이 열린다",
+      "verification": "아무 화면에서 / 키를 누르면 검색 모달이 열리고, 검색어 입력 후 결과 미리보기가 표시된다."
+    },
+    {
+      "id": "P4-CC7",
+      "criterion": "시나리오 8.7 (검색으로 과거 자료 찾기)이 완전히 동작한다",
+      "verification": "계획서 8.7의 4단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+    }
+  ],
+  "risks": [
+    {
+      "risk": "FTS5 한글 토크나이저 정확도 부족",
+      "impact": "높음",
+      "mitigation": "unicode61 토크나이저로 기본 구현 후, 한글 검색 품질이 부족하면 trigram 토크나이저(FTS5 trigram 옵션)를 추가하여 부분 문자열 매칭을 지원한다."
+    },
+    {
+      "risk": "FTS5 데이터 동기화 누락",
+      "impact": "중간",
+      "mitigation": "Prisma의 middleware를 사용하여 엔티티 변경 시 FTS 테이블을 자동 동기화하되, 초기 구축 시 전체 재인덱싱 스크립트도 함께 제공한다."
+    },
+    {
+      "risk": "대량 데이터 검색 시 성능 저하",
+      "impact": "중간",
+      "mitigation": "검색 결과 페이지네이션을 적용하고, FTS5 LIMIT 절을 사용하여 쿼리 수준에서 결과를 제한한다."
+    }
+  ],
+  "notes": [
+    "FTS5 한글 검색은 이 프로젝트의 핵심 기능이므로, Phase 0에서 미리 PoC(Proof of Concept)를 수행하는 것을 권장한다.",
+    "태그 컴포넌트는 6개 엔티티에서 재사용되므로, 범용성 있게 설계해야 한다.",
+    "검색 모달(Command Palette)은 VS Code의 Ctrl+P와 유사한 UX를 참고한다.",
+    "계획서에는 명시되지 않았지만, 검색 결과 정렬 옵션(관련도순, 최신순, 이름순)을 추가하는 것이 사용성에 도움이 된다."
+  ]
+}

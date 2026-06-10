@@ -1,0 +1,261 @@
+{
+  "phase": 7,
+  "title": "QA, Deployment Packaging & Documentation",
+  "title_ko": "QA, 배포 패키징 및 문서화",
+  "description": "전체 기능에 대한 E2E 테스트, 버그 수정, 성능 검증, 배포 패키지(Docker/PM2) 작성, 사용자 매뉴얼 및 운영 가이드를 작성한다. 이 Phase가 완료되면 제품을 실제 운영 환경에 배포할 수 있다.",
+  "status": "not_started",
+  "status_legend": {
+    "not_started": "시작 전",
+    "in_progress": "진행 중",
+    "completed": "완료",
+    "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+    "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+  },
+  "progress_summary": {
+    "total_tasks": 11,
+    "not_started": 11,
+    "in_progress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "estimated_duration": "1~2주 (W12, 필요 시 W13)",
+  "priority": "Critical",
+  "dependencies": [
+    "Phase 0",
+    "Phase 1",
+    "Phase 2",
+    "Phase 3",
+    "Phase 4",
+    "Phase 5",
+    "Phase 6"
+  ],
+  "tasks": [
+    {
+      "id": "P7-T1",
+      "title": "E2E 테스트 작성 (Playwright)",
+      "status": "not_started",
+      "description": "계획서 8장의 7개 사용자 시나리오를 Playwright E2E 테스트로 자동화한다.",
+      "subtasks": [
+        "Playwright 설치 및 설정",
+        "테스트 환경 설정 (테스트 DB 자동 초기화, 시드 데이터)",
+        "E2E 시나리오 1: Teams로 업무가 들어온 경우 (8.1)",
+        "E2E 시나리오 2: Inbox Item을 Task로 전환 (8.2)",
+        "E2E 시나리오 3: 오늘 할 일 확인 (8.3)",
+        "E2E 시나리오 4: 프로젝트별 업무 확인 (8.4)",
+        "E2E 시나리오 5: 회의록 작성 (8.5)",
+        "E2E 시나리오 6: 과거 결정사항 찾기 (8.6)",
+        "E2E 시나리오 7: 검색으로 과거 자료 찾기 (8.7)",
+        "추가 시나리오: 백업 및 복원 흐름",
+        "추가 시나리오: 다크모드 전환"
+      ]
+    },
+    {
+      "id": "P7-T2",
+      "title": "전체 QA 및 버그 수정",
+      "status": "not_started",
+      "description": "모든 화면을 수동으로 테스트하고 발견된 버그를 수정한다.",
+      "subtasks": [
+        "8개 주요 화면 전체 수동 탐색 테스트",
+        "크로스 브라우저 테스트 (Chrome, Edge, Firefox)",
+        "반응형 테스트 (1280px, 1024px 브레이크포인트)",
+        "다크모드 전체 화면 색상 확인",
+        "에지 케이스 테스트 (빈 데이터, 대량 데이터, 특수문자, 초장문 입력)",
+        "접근성 기본 점검 (키보드 탐색, 색 대비)",
+        "버그 수정 및 검증"
+      ]
+    },
+    {
+      "id": "P7-T3",
+      "title": "성능 검증",
+      "status": "not_started",
+      "description": "비기능 요구사항(NFR)에 명시된 성능 기준을 검증한다.",
+      "subtasks": [
+        "API 응답 시간 측정 (p95 < 200ms 확인)",
+        "검색 API 성능 (p95 < 500ms, 회의록 500건 + Task 1만건 기준)",
+        "페이지 초기 로딩 시간 (2초 이내, 캐시 후 1초 이내)",
+        "Kanban 드래그 반응 시간 (< 100ms)",
+        "SQLite DB 크기 확인 (5년 누적 추정 시뮬레이션)",
+        "성능 미달 항목 최적화 (인덱스 추가, 쿼리 최적화, lazy loading 등)"
+      ]
+    },
+    {
+      "id": "P7-T4",
+      "title": "Docker 배포 패키지",
+      "status": "not_started",
+      "description": "Docker를 사용한 1줄 설치/실행 환경을 구성한다.",
+      "subtasks": [
+        "Dockerfile 작성 (Node.js 20 LTS 기반, 멀티 스테이지 빌드)",
+        "docker-compose.yml 작성 (단일 서비스, 볼륨 마운트: data/, backups/, logs/)",
+        ".env.example 작성 (PORT, DB_PATH, BACKUP_DIR, LOG_DIR 등)",
+        "install.bat 작성 (Windows 원클릭 설치 스크립트)",
+        "Docker 이미지 빌드 및 실행 테스트",
+        "PC 부팅 시 자동 시작 스크립트 (Windows 작업 스케줄러 등록)"
+      ]
+    },
+    {
+      "id": "P7-T5",
+      "title": "PM2 대체 배포 (Docker 없이)",
+      "status": "not_started",
+      "description": "Docker 설치가 어려운 환경을 위한 PM2 직접 실행 옵션을 제공한다.",
+      "subtasks": [
+        "ecosystem.config.js (PM2 설정 파일)",
+        "install-no-docker.bat (Node.js 환경 설치 스크립트)",
+        "npm install --production + Prisma migrate + PM2 start 자동화",
+        "PM2 로그 관리 설정",
+        "PM2 startup 등록 (PC 부팅 시 자동 실행)"
+      ]
+    },
+    {
+      "id": "P7-T6",
+      "title": "Frontend 프로덕션 빌드 최적화",
+      "status": "not_started",
+      "description": "프론트엔드 프로덕션 빌드를 최적화한다.",
+      "subtasks": [
+        "Vite build 최적화 (코드 분할, 트리 셰이킹, 압축)",
+        "정적 에셋 캐싱 설정 (해시 파일명)",
+        "Express static 미들웨어로 빌드 결과물 서빙",
+        "SPA fallback 설정 (React Router의 브라우저 히스토리 모드 지원)",
+        "빌드 결과물 크기 확인 (과도하게 큰 청크 분할)"
+      ]
+    },
+    {
+      "id": "P7-T7",
+      "title": "업데이트 절차 구현",
+      "status": "not_started",
+      "description": "새 버전으로 업데이트하는 절차를 자동화한다.",
+      "subtasks": [
+        "update.bat 작성 (백업 → 이미지 교체 → Prisma migrate → 재시작)",
+        "버전 정보 API (GET /api/v1/version)",
+        "업데이트 전 자동 백업 실행",
+        "Prisma migrate deploy 자동 실행 (마이그레이션 호환성)"
+      ]
+    },
+    {
+      "id": "P7-T8",
+      "title": "사용자 매뉴얼 작성",
+      "status": "not_started",
+      "description": "비개발자 사용자를 위한 사용 매뉴얼을 작성한다.",
+      "subtasks": [
+        "설치 가이드 (Docker / PM2 양쪽)",
+        "기본 사용법 (Inbox → Task → Kanban 워크플로우)",
+        "각 화면별 사용 가이드 (스크린샷 포함)",
+        "FAQ (자주 묻는 질문)",
+        "트러블슈팅 가이드 (서버 안 올라가는 경우, 백업 복원 등)"
+      ]
+    },
+    {
+      "id": "P7-T9",
+      "title": "운영 매뉴얼 작성",
+      "status": "not_started",
+      "description": "시스템 운영에 필요한 매뉴얼을 작성한다.",
+      "subtasks": [
+        "서버 시작/중지/재시작 방법",
+        "백업/복구 절차",
+        "로그 확인 방법",
+        "포트 번호 변경 방법",
+        "재해 복구 절차 (호스트 PC 고장 시)",
+        "업데이트 절차"
+      ]
+    },
+    {
+      "id": "P7-T10",
+      "title": "OpenAPI 3.0 문서 생성",
+      "status": "not_started",
+      "description": "전체 API에 대한 Swagger 문서를 생성한다.",
+      "subtasks": [
+        "swagger-jsdoc 또는 수동 OpenAPI 3.0 YAML 작성",
+        "swagger-ui-express로 /api/docs에서 접근 가능하도록 설정",
+        "모든 엔드포인트에 대한 요청/응답 스키마 문서화",
+        "에러 응답 포맷 문서화"
+      ]
+    },
+    {
+      "id": "P7-T11",
+      "title": "UI 텍스트 사전(dictionary) 분리",
+      "status": "not_started",
+      "description": "계획서 15.6의 국제화(i18n) 확장 대비를 위해 UI 텍스트를 사전 파일로 분리한다.",
+      "subtasks": [
+        "모든 UI 텍스트를 ko.json 사전 파일로 추출",
+        "컴포넌트에서 사전 파일 참조 방식으로 변경",
+        "향후 en.json 등 추가 시 언어 전환 가능한 구조 확보",
+        "날짜/숫자 포맷의 locale 설정 분리"
+      ]
+    }
+  ],
+  "completion_criteria": [
+    {
+      "id": "P7-CC1",
+      "criterion": "7개 핵심 E2E 시나리오가 모두 통과한다",
+      "verification": "npx playwright test 실행 시 계획서 8장의 7개 시나리오를 포함한 모든 E2E 테스트가 통과한다."
+    },
+    {
+      "id": "P7-CC2",
+      "criterion": "성능 요구사항을 충족한다",
+      "verification": "대량 시드 데이터(Task 1만건, 회의록 500건) 환경에서 API 응답 p95 < 200ms, 검색 p95 < 500ms, 페이지 로딩 < 2초, Kanban 드래그 < 100ms가 모두 충족된다."
+    },
+    {
+      "id": "P7-CC3",
+      "criterion": "Docker로 1줄 설치가 가능하다",
+      "verification": "깨끗한 Windows 10 환경에서 Docker Desktop 설치 후 install.bat 더블클릭으로 WorksOS가 자동 빌드·실행되고, 브라우저에서 http://localhost:3080 접속 시 Dashboard가 표시된다."
+    },
+    {
+      "id": "P7-CC4",
+      "criterion": "PM2로도 설치·실행이 가능하다",
+      "verification": "Docker 없는 환경에서 Node.js 20 설치 후 install-no-docker.bat 실행으로 WorksOS가 PM2로 시작되고, 브라우저에서 접속 가능하다."
+    },
+    {
+      "id": "P7-CC5",
+      "criterion": "크로스 브라우저 호환성이 확인된다",
+      "verification": "Chrome, Edge, Firefox 최신 버전에서 모든 핵심 기능이 정상 동작하고, 시각적 깨짐이 없다."
+    },
+    {
+      "id": "P7-CC6",
+      "criterion": "OpenAPI 문서가 접근 가능하다",
+      "verification": "브라우저에서 http://localhost:3080/api/docs 접속 시 Swagger UI가 표시되고, 모든 엔드포인트를 확인·테스트할 수 있다."
+    },
+    {
+      "id": "P7-CC7",
+      "criterion": "사용자 매뉴얼과 운영 매뉴얼이 완성된다",
+      "verification": "비개발자가 매뉴얼만 보고 설치, 기본 사용, 백업/복구를 수행할 수 있다."
+    },
+    {
+      "id": "P7-CC8",
+      "criterion": "업데이트 절차가 정상 동작한다",
+      "verification": "update.bat 실행 시 자동 백업 → 새 버전 배포 → DB 마이그레이션 → 재시작이 순차적으로 완료되고, 기존 데이터가 유지된다."
+    },
+    {
+      "id": "P7-CC9",
+      "criterion": "PC 부팅 시 자동 시작된다",
+      "verification": "호스트 PC를 재부팅한 후 별도 조작 없이 WorksOS 서버가 자동 시작되어 브라우저에서 접속 가능하다."
+    },
+    {
+      "id": "P7-CC10",
+      "criterion": "배포 패키지가 완성된다",
+      "verification": "계획서 17.1의 산출물 패키지 구조(docker-compose.yml, .env.example, README.md, install.bat, 소스코드)가 모두 포함된 릴리스 패키지가 생성된다."
+    }
+  ],
+  "risks": [
+    {
+      "risk": "E2E 테스트 환경 불안정",
+      "impact": "중간",
+      "mitigation": "Playwright의 headless 모드를 기본으로 사용하고, 불안정한 테스트는 retry 옵션을 설정한다. CI 환경에서의 안정성도 확인한다."
+    },
+    {
+      "risk": "Docker 이미지 크기 과대",
+      "impact": "낮음",
+      "mitigation": "멀티 스테이지 빌드로 런타임 이미지에 devDependencies를 포함하지 않고, Alpine 베이스 이미지를 사용한다."
+    },
+    {
+      "risk": "Windows 작업 스케줄러 권한 이슈",
+      "impact": "중간",
+      "mitigation": "관리자 권한 없이도 등록 가능한 사용자 수준 작업을 사용하고, 실패 시 수동 등록 가이드를 매뉴얼에 포함한다."
+    }
+  ],
+  "notes": [
+    "이 Phase는 제품 출시를 위한 최종 관문이며, 여기서 발견된 버그나 성능 이슈에 따라 기간이 1~2주 변동될 수 있다.",
+    "UI 텍스트 사전 분리는 계획서에 명시된 국제화 확장 대비 조치이다. MVP에서는 한국어 단일이지만, 구조를 미리 갖추면 향후 확장이 용이하다.",
+    "OpenAPI 문서 자동 생성은 계획서 21.2 요구 산출물에 포함되어 있다.",
+    "ERD 다이어그램은 Prisma의 prisma-erd-generator 또는 dbdiagram.io를 사용하여 자동 생성한다."
+  ]
+}

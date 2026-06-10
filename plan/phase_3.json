@@ -1,0 +1,180 @@
+{
+  "phase": 3,
+  "title": "Meeting Notes & Templates",
+  "title_ko": "회의록 및 템플릿",
+  "description": "프로젝트별 회의록 작성, Markdown 에디터, 템플릿 시스템, HTML Export, 회의록 내 Action Item → Task 전환 기능을 구현한다.",
+  "status": "not_started",
+  "status_legend": {
+    "not_started": "시작 전",
+    "in_progress": "진행 중",
+    "completed": "완료",
+    "blocked": "차단됨 (선행 작업 또는 외부 요인으로 진행 불가)",
+    "skipped": "건너뜀 (불필요하거나 다른 방식으로 해결)"
+  },
+  "progress_summary": {
+    "total_tasks": 7,
+    "not_started": 7,
+    "in_progress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "estimated_duration": "2주 (W6 ~ W7)",
+  "priority": "High",
+  "dependencies": [
+    "Phase 1"
+  ],
+  "tasks": [
+    {
+      "id": "P3-T1",
+      "title": "Meeting Notes CRUD API",
+      "status": "not_started",
+      "description": "회의록 관리 REST API를 구현한다.",
+      "subtasks": [
+        "GET /api/v1/projects/:id/meeting-notes — 프로젝트별 회의록 목록 (meeting_date DESC 정렬)",
+        "POST /api/v1/projects/:id/meeting-notes — 생성 (title, meeting_date, attendees, markdown_content, tags)",
+        "GET /api/v1/meeting-notes/:id — 상세 (관련 Task, Decision 포함)",
+        "PATCH /api/v1/meeting-notes/:id — 수정",
+        "DELETE /api/v1/meeting-notes/:id — 삭제",
+        "회의록 생성 시 AuditLog 자동 기록"
+      ]
+    },
+    {
+      "id": "P3-T2",
+      "title": "HTML Export API",
+      "status": "not_started",
+      "description": "회의록의 Markdown 본문을 HTML로 변환하여 Export하는 API를 구현한다.",
+      "subtasks": [
+        "GET /api/v1/meeting-notes/:id/export.html — HTML Export 엔드포인트",
+        "markdown-it을 사용한 Markdown → HTML 변환",
+        "DOMPurify를 사용한 HTML 살균 (XSS 방지)",
+        "Export HTML에 기본 스타일 인라인 포함 (회사 시스템 업로드 시 깨지지 않도록)",
+        "HTML 파일 다운로드 또는 브라우저에서 미리보기",
+        "html_content 캐시 필드 업데이트 (markdown 변경 시 캐시 무효화)"
+      ]
+    },
+    {
+      "id": "P3-T3",
+      "title": "회의록 템플릿 시스템",
+      "status": "not_started",
+      "description": "회의록 작성 시 기본 템플릿을 제공하고, 사용자가 커스텀 템플릿을 저장할 수 있도록 한다.",
+      "subtasks": [
+        "기본 제공 템플릿 (날짜, 참석자, 안건, 논의 내용, 결정사항, Action Items 구조)",
+        "UserSetting.meeting_note_template에 커스텀 템플릿 저장",
+        "Settings 페이지에서 템플릿 편집 UI",
+        "새 회의록 생성 시 자동 템플릿 적용",
+        "템플릿 변수 지원 ({{date}}, {{project_name}} 등 간단한 치환)"
+      ]
+    },
+    {
+      "id": "P3-T4",
+      "title": "Markdown 에디터 UI (TipTap)",
+      "status": "not_started",
+      "description": "회의록 작성을 위한 위지윅 + Markdown 동시 지원 에디터를 구현한다.",
+      "subtasks": [
+        "TipTap 에디터 설치 및 기본 설정",
+        "지원 기능: 제목(H1~H3), 굵게, 기울임, 목록(순서/비순서), 체크박스, 코드블록, 링크, 테이블, 구분선",
+        "마크다운 모드 전환 (위지윅 ↔ 소스 코드 토글)",
+        "에디터 툴바 UI",
+        "자동 저장 (30초 간격 또는 blur 시)",
+        "이미지 삽입은 MVP에서 미지원 (텍스트 링크로 대체)"
+      ]
+    },
+    {
+      "id": "P3-T5",
+      "title": "회의록 목록 및 상세 UI",
+      "status": "not_started",
+      "description": "회의록 목록 화면과 상세 보기/편집 화면을 구현한다.",
+      "subtasks": [
+        "Project Detail의 Meeting Notes 탭에 회의록 목록 표시",
+        "회의록 카드: 제목, 회의 날짜, 참석자 요약, 태그",
+        "회의록 상세 페이지 (별도 페이지, 모달 X — 계획서 6.6 확정)",
+        "편집 모드 전환 (읽기 전용 ↔ 편집)",
+        "회의록 삭제 확인 모달",
+        "관련 Decision 목록 표시 (Phase 5에서 연결)",
+        "HTML Export 다운로드 버튼"
+      ]
+    },
+    {
+      "id": "P3-T6",
+      "title": "Action Item → Task 전환",
+      "status": "not_started",
+      "description": "회의록 내 체크박스(Action Item)를 Task로 전환하는 기능을 구현한다.",
+      "subtasks": [
+        "회의록 본문에서 체크박스 항목 파싱",
+        "각 Action Item 옆에 '→ Task 전환' 버튼 표시",
+        "클릭 시 Task 생성 폼 모달 (제목은 체크박스 텍스트로 자동 채움)",
+        "생성된 Task와 MeetingNote 간 M:N 관계 연결 (related_task_ids)",
+        "이미 전환된 Action Item 표시 (비활성화 또는 Task 링크 표시)"
+      ]
+    },
+    {
+      "id": "P3-T7",
+      "title": "Phase 3 테스트",
+      "status": "not_started",
+      "description": "Phase 3에서 구현한 모든 기능의 테스트를 작성한다.",
+      "subtasks": [
+        "MeetingNote CRUD API 통합 테스트",
+        "HTML Export API 테스트 (Markdown → HTML 변환 정확성)",
+        "DOMPurify XSS 방지 테스트 (악의적 HTML 입력 시 살균 확인)",
+        "템플릿 적용 테스트",
+        "Action Item → Task 전환 API 테스트",
+        "회의록-Task M:N 관계 테스트"
+      ]
+    }
+  ],
+  "completion_criteria": [
+    {
+      "id": "P3-CC1",
+      "criterion": "프로젝트에서 회의록을 생성하고 Markdown으로 작성할 수 있다",
+      "verification": "Project Detail의 Meeting Notes 탭에서 + 버튼으로 새 회의록을 생성하고, TipTap 에디터에서 제목/목록/체크박스 등을 포함한 회의록을 작성하여 저장하면, 목록에 표시된다."
+    },
+    {
+      "id": "P3-CC2",
+      "criterion": "회의록 템플릿이 적용된다",
+      "verification": "Settings에서 커스텀 템플릿을 저장한 후, 새 회의록 생성 시 해당 템플릿이 에디터에 미리 채워진다."
+    },
+    {
+      "id": "P3-CC3",
+      "criterion": "HTML Export가 정상 동작한다",
+      "verification": "회의록 상세 화면에서 'HTML Export' 버튼을 클릭하면, Markdown이 HTML로 변환된 파일이 다운로드되고, 해당 HTML 파일을 브라우저에서 열면 포맷이 올바르게 표시된다."
+    },
+    {
+      "id": "P3-CC4",
+      "criterion": "Action Item을 Task로 전환할 수 있다",
+      "verification": "회의록에 체크박스로 작성된 Action Item 옆의 '→ Task 전환' 버튼을 클릭하면, Task 생성 폼이 열리고, 생성된 Task가 해당 회의록과 연결되어 관련 Task 목록에 표시된다."
+    },
+    {
+      "id": "P3-CC5",
+      "criterion": "시나리오 8.5 (회의록 작성)이 완전히 동작한다",
+      "verification": "계획서 8.5의 8단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+    },
+    {
+      "id": "P3-CC6",
+      "criterion": "HTML Export에 XSS 취약점이 없다",
+      "verification": "<script> 태그를 포함한 Markdown 입력으로 HTML Export 시, 스크립트 태그가 제거되어 출력된다."
+    }
+  ],
+  "risks": [
+    {
+      "risk": "TipTap 에디터 커스터마이징 복잡성",
+      "impact": "중간",
+      "mitigation": "TipTap의 기본 확장만 사용하고, 고급 커스터마이징은 피한다. 대안으로 Milkdown을 고려한다."
+    },
+    {
+      "risk": "Markdown ↔ TipTap 문서 모델 변환 손실",
+      "impact": "중간",
+      "mitigation": "위지윅 ↔ Markdown 전환 시 포맷 손실이 발생할 수 있으므로, Markdown을 원본으로 저장하고 TipTap은 편집 시에만 변환하는 방식을 채택한다."
+    },
+    {
+      "risk": "HTML Export 스타일 호환성",
+      "impact": "낮음",
+      "mitigation": "회사 시스템(Confluence, SharePoint 등)에 업로드할 때 스타일이 깨질 수 있으므로, 인라인 CSS만 사용하고 외부 CSS 의존성을 배제한다."
+    }
+  ],
+  "notes": [
+    "회의록 UI는 별도 페이지 방식이다 (모달 X) — 계획서 6.6 확정 사항.",
+    "이미지 삽입은 MVP에서 미지원. 이미지가 필요한 경우 로컬 파일 경로 또는 사내 서버 URL을 텍스트 링크로 기록하도록 안내한다.",
+    "자동 저장 기능은 사용자의 작업 손실을 방지하기 위해 반드시 구현한다. 30초 간격 또는 에디터에서 포커스가 벗어날 때 저장한다."
+  ]
+}
