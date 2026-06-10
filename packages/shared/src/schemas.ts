@@ -39,6 +39,9 @@ export const CreateInboxItemSchema = z.object({
 });
 
 export const UpdateInboxItemSchema = CreateInboxItemSchema.partial();
+export const PatchInboxItemSchema = UpdateInboxItemSchema.extend({
+  status: z.enum(enumValues(InboxStatus)).optional()
+});
 
 export const CreateProjectLinkSchema = z.object({
   project_id: z.string().uuid("Invalid Project ID"),
@@ -50,6 +53,20 @@ export const CreateProjectLinkSchema = z.object({
 });
 
 export const UpdateProjectLinkSchema = CreateProjectLinkSchema.partial();
+
+export const ConvertInboxItemSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  project_id: z.string().uuid().optional(),
+  sub_project_id: z.string().uuid().optional(),
+  priority: z.enum(enumValues(Priority)).optional().default(Priority.MEDIUM),
+  due_date: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  copy_description: z.boolean().optional().default(true)
+});
+
+export const UpdateTaskStatusSchema = z.object({
+  status: z.enum(enumValues(TaskStatus))
+});
 
 export const CreateMeetingNoteSchema = z.object({
   project_id: z.string().uuid("Invalid Project ID"),
@@ -88,9 +105,41 @@ export const CreateTagSchema = z.object({
 export const UpdateTagSchema = CreateTagSchema.partial();
 
 export const UpdateUserSettingSchema = z.object({
-  dashboard_visible_statuses: z.array(z.string()).optional(),
+  dashboard_visible_statuses: z.array(z.enum(enumValues(TaskStatus))).min(1).optional(),
   default_kanban_view: z.enum(['All', 'Project']).optional(),
   default_project_filter: z.string().uuid().optional().nullable(),
   theme: z.enum(enumValues(ThemeType)).optional(),
   meeting_note_template: z.string().optional().nullable()
+});
+
+export const ConvertMeetingActionItemSchema = z.object({
+  action_item_text: z.string().min(1, "Action item text is required"),
+  project_id: z.string().uuid().optional(),
+  priority: z.enum(enumValues(Priority)).optional().default(Priority.MEDIUM),
+  due_date: z.string().optional(),
+  tags: z.array(z.string()).optional()
+});
+
+export const ProjectListQuerySchema = z.object({
+  tag: z.string().optional(),
+  status: z.enum(enumValues(ProjectStatus)).optional(),
+});
+
+export const InboxListQuerySchema = z.object({
+  project_id: z.string().uuid().optional(),
+  status: z.enum(enumValues(InboxStatus)).optional(),
+  tag: z.string().optional(),
+});
+
+export const TaskListQuerySchema = z.object({
+  project_id: z.string().uuid().optional(),
+  status: z.enum(enumValues(TaskStatus)).optional(),
+  priority: z.enum(enumValues(Priority)).optional(),
+  dashboard: z.enum(['today', 'overdue', 'waiting']).optional(),
+});
+
+export const KanbanQuerySchema = z.object({
+  scope: z.enum(['all', 'project', 'sub_project']).optional().default('all'),
+  project_id: z.string().uuid().optional(),
+  sub_project_id: z.string().uuid().optional(),
 });

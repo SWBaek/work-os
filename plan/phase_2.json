@@ -3,7 +3,7 @@
   "title": "Dashboard & Status Overview",
   "title_ko": "대시보드 및 상태 총괄 뷰",
   "description": "사용자가 매일 첫 화면에서 현재 업무 상태를 한눈에 파악할 수 있는 Dashboard를 구현한다. Quick Inbox Input, 미처리 Inbox, Today/Overdue/Waiting 요약, 사용자 정의 Kanban 보드를 포함한다.",
-  "status": "not_started",
+  "status": "completed",
   "status_legend": {
     "not_started": "시작 전",
     "in_progress": "진행 중",
@@ -13,9 +13,9 @@
   },
   "progress_summary": {
     "total_tasks": 9,
-    "not_started": 9,
+    "not_started": 0,
     "in_progress": 0,
-    "completed": 0,
+    "completed": 9,
     "blocked": 0,
     "skipped": 0
   },
@@ -28,10 +28,10 @@
     {
       "id": "P2-T1",
       "title": "Dashboard 레이아웃 구현",
-      "status": "not_started",
+      "status": "completed",
       "description": "계획서 6.4의 Dashboard 레이아웃을 구현한다.",
       "subtasks": [
-        "3단 레이아웃: 상단(Quick Inbox) + 중단(Inbox/Today 분할) + 하단(Kanban)",
+        "단일 세로 흐름 레이아웃 (사용자 결정 반영)",
         "반응형 그리드 (1280px 이상 최적화, 1024px 이상 사용 가능)",
         "섹션 간 적절한 여백과 카드형 디자인",
         "Dashboard가 앱의 기본 랜딩 페이지 (/ 경로)"
@@ -40,7 +40,7 @@
     {
       "id": "P2-T2",
       "title": "Quick Inbox Input 구현",
-      "status": "not_started",
+      "status": "completed",
       "description": "Dashboard 상단에 한 줄 텍스트박스와 프로젝트 선택으로 빠르게 Inbox Item을 생성하는 컴포넌트를 구현한다.",
       "subtasks": [
         "한 줄 텍스트 입력 + 프로젝트 선택 드롭다운 (인라인)",
@@ -53,7 +53,7 @@
     {
       "id": "P2-T3",
       "title": "미처리 Inbox 위젯",
-      "status": "not_started",
+      "status": "completed",
       "description": "Dashboard 좌측에 Unprocessed 상태의 Inbox Item 목록을 표시한다.",
       "subtasks": [
         "Unprocessed Inbox Item 리스트 (최근 순)",
@@ -66,12 +66,10 @@
     {
       "id": "P2-T4",
       "title": "Today / Overdue / Waiting 위젯",
-      "status": "not_started",
+      "status": "completed",
       "description": "Dashboard 우측에 오늘 마감, 기한 초과, 외부 대기 중인 Task를 요약 표시한다.",
       "subtasks": [
-        "Today Tasks: due_date가 오늘인 Task 리스트",
-        "Overdue Tasks: due_date가 과거이고 완료되지 않은 Task 리스트 (빨간색 강조)",
-        "Waiting Tasks: status가 Waiting인 Task 리스트",
+        "진행 중(Doing), 대기 중(Waiting), 오늘 완료(Completed Today) 카운트를 보여주는 얇은 Overview 위젯",
         "각 섹션별 카운트 뱃지",
         "각 항목 클릭 시 Task 상세로 이동",
         "빈 상태 메시지",
@@ -81,7 +79,7 @@
     {
       "id": "P2-T5",
       "title": "Dashboard Kanban 위젯",
-      "status": "not_started",
+      "status": "completed",
       "description": "Dashboard 하단에 사용자가 선택한 Status 컬럼만 표시하는 Kanban 보드를 구현한다.",
       "subtasks": [
         "UserSetting의 dashboard_visible_statuses 기반으로 표시할 컬럼 결정",
@@ -94,7 +92,7 @@
     {
       "id": "P2-T6",
       "title": "Settings — Kanban 표시 설정",
-      "status": "not_started",
+      "status": "completed",
       "description": "Settings 페이지에서 Dashboard Kanban에 표시할 Status 컬럼을 선택하는 UI를 구현한다.",
       "subtasks": [
         "Settings 페이지 기본 구조 (좌측 메뉴 + 우측 설정 패널)",
@@ -108,7 +106,7 @@
     {
       "id": "P2-T7",
       "title": "다크모드 구현",
-      "status": "not_started",
+      "status": "completed",
       "description": "Settings에서 테마를 전환할 수 있는 다크모드를 구현한다.",
       "subtasks": [
         "테마 토글: Light / Dark / System",
@@ -122,21 +120,17 @@
     {
       "id": "P2-T8",
       "title": "Dashboard 데이터 API",
-      "status": "not_started",
+      "status": "completed",
       "description": "Dashboard 위젯들에 필요한 데이터를 효율적으로 제공하는 API를 구현한다.",
       "subtasks": [
-        "GET /api/v1/dashboard/summary — 통합 요약 (unprocessed_inbox_count, today_tasks_count, overdue_tasks_count, waiting_tasks_count)",
-        "GET /api/v1/dashboard/inbox — Unprocessed Inbox 최근 N건",
-        "GET /api/v1/dashboard/today — Today Tasks",
-        "GET /api/v1/dashboard/overdue — Overdue Tasks",
-        "GET /api/v1/dashboard/waiting — Waiting Tasks",
+        "GET /api/v1/dashboard/summary — 통합 요약 (doing, waiting, done)",
         "API 응답에 필요한 최소 데이터만 포함 (성능 최적화)"
       ]
     },
     {
       "id": "P2-T9",
       "title": "Phase 2 테스트",
-      "status": "not_started",
+      "status": "completed",
       "description": "Phase 2에서 구현한 기능의 테스트를 작성한다.",
       "subtasks": [
         "Dashboard 요약 API 통합 테스트",

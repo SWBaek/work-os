@@ -194,6 +194,7 @@ WorksOS는 다양한 경로로 유입되는 개인 업무를 빠르게 수집하
 2단 구조:
 - **좌측 Navigation Bar (고정, 240px)**: Dashboard / Inbox / Projects / Decisions / Search / Settings
 - **우측 Main Content (가변)**: 페이지별 콘텐츠
+- **Meeting Notes 노출 원칙**: 좌측 Navigation Bar에 포함하지 않는다. 회의록은 항상 특정 프로젝트 컨텍스트 아래에서만 접근하며, `Project Detail > Meeting Notes` 탭과 프로젝트 종속 라우트(`/projects/:projectId/meeting-notes`, `/projects/:projectId/meeting-notes/:noteId`)로 진입한다.
 
 ### 6.3 주요 화면 (8개)
 
@@ -203,10 +204,12 @@ WorksOS는 다양한 경로로 유입되는 개인 업무를 빠르게 수집하
 | 2 | Inbox | 미처리 항목 리스트, Task 전환 |
 | 3 | Projects | 프로젝트 카드 리스트 (상태, 태그, 진행 Task 수) |
 | 4 | Project Detail | 6개 탭(Overview/Tasks/Kanban/MeetingNotes/Decisions/Links) |
-| 5 | Meeting Notes | Markdown 에디터, 템플릿, HTML Export |
+| 5 | Meeting Notes | 프로젝트 종속 화면. Project Detail의 Meeting Notes 탭에서 진입하며, Markdown 에디터/템플릿/HTML Export를 제공 |
 | 6 | Decisions | 결정사항 타임라인 |
 | 7 | Search | 통합 검색 + 엔티티별 결과 분류 |
 | 8 | Settings | Kanban 컬럼 표시, 회의록 템플릿, 태그 관리, 백업 |
+
+- **보강 규칙**: Meeting Notes는 독립 최상위 메뉴가 아니라 Project Detail 하위 정보 구조다. 사용자는 항상 프로젝트를 먼저 선택한 뒤 해당 프로젝트 범위의 회의록 목록과 상세 화면으로 이동한다.
 
 ### 6.4 Dashboard 레이아웃 상세
 ```
@@ -224,6 +227,8 @@ WorksOS는 다양한 경로로 유입되는 개인 업무를 빠르게 수집하
 - **Header**: 프로젝트 이름, 개요, 상태, 주요 태그, 관련 링크
 - **Tab 영역**: 6개 탭 전환
 - **Overview 구성**: 진행/대기 Task 카운트, 최근 회의록 3건, 최근 결정사항 3건, Sub Project 목록
+- **Meeting Notes 탭 동작**: 탭 클릭 시 해당 프로젝트의 회의록 목록 라우트(`/projects/:projectId/meeting-notes`)로 이동한다.
+- **회의록 상세/작성 동선**: 목록에서 `회의록 작성` 또는 특정 회의록 선택 시 모달이 아니라 프로젝트 종속 별도 페이지(`/projects/:projectId/meeting-notes/:noteId`)로 이동한다.
 
 ### 6.6 디자인 가이드 (확정)
 - **다크모드 지원**: 필수 (Settings에서 토글)

@@ -2245,10 +2245,18 @@
 
     // Try auto fetch if served locally via server
     async function tryFetchPhases() {
+      if (window.location.protocol === 'file:') {
+        const dropzone = document.getElementById('dropzone');
+        if (dropzone && !dropzone.innerHTML.includes('브라우저 보안')) {
+          dropzone.innerHTML += '<br><span style="color: var(--color-blocked); font-size: 0.8rem; display: block; margin-top: 0.5rem;">⚠️ 로컬 파일(file://) 환경에서는 브라우저 보안 정책으로 인해 JSON을 자동으로 불러올 수 없습니다.<br>수정 시 자동으로 불러오려면 <b>VS Code Live Server</b>나 <b>npx serve</b> 등 로컬 웹 서버로 열어주세요.</span>';
+        }
+        return;
+      }
+
       try {
         const fetched = [];
         for (let i = 0; i <= 7; i++) {
-          const res = await fetch('./phase_' + i + '.json');
+          const res = await fetch('./phase_' + i + '.json?t=' + new Date().getTime(), { cache: 'no-store' });
           if (res.ok) {
             const json = await res.json();
             fetched.push(json);

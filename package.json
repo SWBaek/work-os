@@ -12,7 +12,8 @@
     "migrate": "npm run migrate -w server",
     "migrate:deploy": "npm run migrate:deploy -w server",
     "seed": "npm run seed -w server",
-    "lint": "npm run lint -w web"
+    "lint": "npm run lint -w web",
+    "test": "npm run test -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

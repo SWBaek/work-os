@@ -3,7 +3,7 @@
   "title": "Meeting Notes & Templates",
   "title_ko": "회의록 및 템플릿",
   "description": "프로젝트별 회의록 작성, Markdown 에디터, 템플릿 시스템, HTML Export, 회의록 내 Action Item → Task 전환 기능을 구현한다.",
-  "status": "not_started",
+  "status": "completed",
   "status_legend": {
     "not_started": "시작 전",
     "in_progress": "진행 중",
@@ -13,9 +13,9 @@
   },
   "progress_summary": {
     "total_tasks": 7,
-    "not_started": 7,
+    "not_started": 0,
     "in_progress": 0,
-    "completed": 0,
+    "completed": 7,
     "blocked": 0,
     "skipped": 0
   },
@@ -28,7 +28,7 @@
     {
       "id": "P3-T1",
       "title": "Meeting Notes CRUD API",
-      "status": "not_started",
+      "status": "completed",
       "description": "회의록 관리 REST API를 구현한다.",
       "subtasks": [
         "GET /api/v1/projects/:id/meeting-notes — 프로젝트별 회의록 목록 (meeting_date DESC 정렬)",
@@ -42,7 +42,7 @@
     {
       "id": "P3-T2",
       "title": "HTML Export API",
-      "status": "not_started",
+      "status": "completed",
       "description": "회의록의 Markdown 본문을 HTML로 변환하여 Export하는 API를 구현한다.",
       "subtasks": [
         "GET /api/v1/meeting-notes/:id/export.html — HTML Export 엔드포인트",
@@ -56,7 +56,7 @@
     {
       "id": "P3-T3",
       "title": "회의록 템플릿 시스템",
-      "status": "not_started",
+      "status": "completed",
       "description": "회의록 작성 시 기본 템플릿을 제공하고, 사용자가 커스텀 템플릿을 저장할 수 있도록 한다.",
       "subtasks": [
         "기본 제공 템플릿 (날짜, 참석자, 안건, 논의 내용, 결정사항, Action Items 구조)",
@@ -69,7 +69,7 @@
     {
       "id": "P3-T4",
       "title": "Markdown 에디터 UI (TipTap)",
-      "status": "not_started",
+      "status": "completed",
       "description": "회의록 작성을 위한 위지윅 + Markdown 동시 지원 에디터를 구현한다.",
       "subtasks": [
         "TipTap 에디터 설치 및 기본 설정",
@@ -83,12 +83,15 @@
     {
       "id": "P3-T5",
       "title": "회의록 목록 및 상세 UI",
-      "status": "not_started",
-      "description": "회의록 목록 화면과 상세 보기/편집 화면을 구현한다.",
+      "status": "completed",
+      "description": "프로젝트 상세 컨텍스트에 종속된 회의록 목록/상세/작성 라우트 UI를 구현한다.",
       "subtasks": [
-        "Project Detail의 Meeting Notes 탭에 회의록 목록 표시",
-        "회의록 카드: 제목, 회의 날짜, 참석자 요약, 태그",
-        "회의록 상세 페이지 (별도 페이지, 모달 X — 계획서 6.6 확정)",
+        "전역 사이드바에는 Meeting Notes 메뉴를 두지 않고 Project Detail > Meeting Notes 탭에서만 진입",
+        "프로젝트별 회의록 목록 라우트: /projects/:projectId/meeting-notes",
+        "프로젝트별 회의록 상세/작성 라우트: /projects/:projectId/meeting-notes/:noteId (모달 X)",
+        "Project Detail의 Meeting Notes 탭 클릭 시 해당 프로젝트 회의록 목록 렌더링",
+        "회의록 카드: 제목, 회의 날짜, 참석자 요약, 태그, 상세 이동 CTA",
+        "목록에서 '회의록 작성' 또는 '상세 보기' 클릭 시 프로젝트 종속 별도 페이지로 이동",
         "편집 모드 전환 (읽기 전용 ↔ 편집)",
         "회의록 삭제 확인 모달",
         "관련 Decision 목록 표시 (Phase 5에서 연결)",
@@ -98,7 +101,7 @@
     {
       "id": "P3-T6",
       "title": "Action Item → Task 전환",
-      "status": "not_started",
+      "status": "completed",
       "description": "회의록 내 체크박스(Action Item)를 Task로 전환하는 기능을 구현한다.",
       "subtasks": [
         "회의록 본문에서 체크박스 항목 파싱",
@@ -111,7 +114,7 @@
     {
       "id": "P3-T7",
       "title": "Phase 3 테스트",
-      "status": "not_started",
+      "status": "completed",
       "description": "Phase 3에서 구현한 모든 기능의 테스트를 작성한다.",
       "subtasks": [
         "MeetingNote CRUD API 통합 테스트",
@@ -126,8 +129,8 @@
   "completion_criteria": [
     {
       "id": "P3-CC1",
-      "criterion": "프로젝트에서 회의록을 생성하고 Markdown으로 작성할 수 있다",
-      "verification": "Project Detail의 Meeting Notes 탭에서 + 버튼으로 새 회의록을 생성하고, TipTap 에디터에서 제목/목록/체크박스 등을 포함한 회의록을 작성하여 저장하면, 목록에 표시된다."
+      "criterion": "특정 프로젝트 컨텍스트 안에서만 회의록을 생성하고 Markdown으로 작성할 수 있다",
+      "verification": "Project Detail의 Meeting Notes 탭 또는 /projects/:projectId/meeting-notes 경로에서만 + 버튼으로 새 회의록을 생성할 수 있고, TipTap 에디터에서 제목/목록/체크박스 등을 포함한 회의록을 저장하면 같은 프로젝트의 목록에 표시된다."
     },
     {
       "id": "P3-CC2",
@@ -146,8 +149,8 @@
     },
     {
       "id": "P3-CC5",
-      "criterion": "시나리오 8.5 (회의록 작성)이 완전히 동작한다",
-      "verification": "계획서 8.5의 8단계 시나리오를 처음부터 끝까지 실행할 수 있다."
+      "criterion": "시나리오 8.5 (회의록 작성)가 프로젝트 종속 구조로 완전히 동작한다",
+      "verification": "계획서 8.5의 8단계 시나리오를 프로젝트 상세 화면 진입 → Meeting Notes 탭 선택 → /projects/:projectId/meeting-notes 및 /projects/:projectId/meeting-notes/:noteId 라우트 이동 흐름으로 처음부터 끝까지 실행할 수 있다."
     },
     {
       "id": "P3-CC6",
