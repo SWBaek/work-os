@@ -29,6 +29,15 @@ describe('task status rules', () => {
     expect(update.canceled_at).toBeNull();
   });
 
+  it('allows Hold to Done because paused work can be completed without reopening', () => {
+    const update = applyTaskStatus(TaskStatus.HOLD, TaskStatus.DONE);
+
+    expect(update.status).toBe(TaskStatus.DONE);
+    expect(update.completed_at).toBeInstanceOf(Date);
+    expect(update.archived_at).toBeNull();
+    expect(update.canceled_at).toBeNull();
+  });
+
   it('rejects invalid status transitions', () => {
     expect(() => applyTaskStatus(TaskStatus.CANCELED, TaskStatus.IN_PROGRESS)).toThrow(HttpError);
     expect(() => applyTaskStatus(TaskStatus.CANCELED, TaskStatus.IN_PROGRESS)).toThrow('Cannot move task from Canceled to In Progress');

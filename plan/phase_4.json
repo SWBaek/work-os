@@ -24,7 +24,8 @@
   "dependencies": [
     "Phase 1",
     "Phase 3",
-    "Phase 3.5"
+    "Phase 3.5",
+    "Phase 3.7"
   ],
   "tasks": [
     {

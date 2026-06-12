@@ -18,7 +18,7 @@ export const allowedTransitions: Record<TaskStatus, TaskStatus[]> = {
   [TaskStatus.OPEN]: [TaskStatus.IN_PROGRESS, TaskStatus.WAITING, TaskStatus.HOLD, TaskStatus.DONE, TaskStatus.CANCELED, TaskStatus.ARCHIVED],
   [TaskStatus.IN_PROGRESS]: [TaskStatus.OPEN, TaskStatus.WAITING, TaskStatus.HOLD, TaskStatus.DONE, TaskStatus.CANCELED, TaskStatus.ARCHIVED],
   [TaskStatus.WAITING]: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.HOLD, TaskStatus.DONE, TaskStatus.CANCELED, TaskStatus.ARCHIVED],
-  [TaskStatus.HOLD]: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.WAITING, TaskStatus.CANCELED, TaskStatus.ARCHIVED],
+  [TaskStatus.HOLD]: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.WAITING, TaskStatus.DONE, TaskStatus.CANCELED, TaskStatus.ARCHIVED],
   [TaskStatus.DONE]: [TaskStatus.OPEN, TaskStatus.ARCHIVED],
   [TaskStatus.ARCHIVED]: [TaskStatus.OPEN],
   [TaskStatus.CANCELED]: [TaskStatus.OPEN, TaskStatus.ARCHIVED],

@@ -1,0 +1,176 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: W
+      - generic [ref=e7]: WorksOS
+    - navigation [ref=e8]:
+      - link "대시보드" [ref=e9] [cursor=pointer]:
+        - /url: /
+        - img [ref=e10]
+        - text: 대시보드
+      - link "Inbox" [ref=e15] [cursor=pointer]:
+        - /url: /inbox
+        - img [ref=e16]
+        - text: Inbox
+      - link "프로젝트" [ref=e19] [cursor=pointer]:
+        - /url: /projects
+        - img [ref=e20]
+        - text: 프로젝트
+      - generic [ref=e30]:
+        - generic [ref=e31]: 활성 프로젝트
+        - generic [ref=e32]:
+          - link "GM하위" [ref=e33] [cursor=pointer]:
+            - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+          - generic [ref=e34]:
+            - link "개요" [ref=e35] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+            - link "작업" [ref=e36] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=tasks
+            - link "칸반" [ref=e37] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=kanban
+            - link "회의록" [ref=e38] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843/meeting-notes
+        - generic [ref=e39]:
+          - link "5234" [ref=e40] [cursor=pointer]:
+            - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+          - generic [ref=e41]:
+            - link "개요" [ref=e42] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+            - link "작업" [ref=e43] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=tasks
+            - link "칸반" [ref=e44] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=kanban
+            - link "회의록" [ref=e45] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6/meeting-notes
+        - generic [ref=e46]:
+          - link "GM" [ref=e47] [cursor=pointer]:
+            - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+          - generic [ref=e48]:
+            - link "개요" [ref=e49] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+            - link "작업" [ref=e50] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=tasks
+            - link "칸반" [ref=e51] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=kanban
+            - link "회의록" [ref=e52] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3/meeting-notes
+      - link "작업" [ref=e53] [cursor=pointer]:
+        - /url: /tasks
+        - img [ref=e54]
+        - text: 작업
+      - link "칸반" [ref=e57] [cursor=pointer]:
+        - /url: /kanban
+        - img [ref=e58]
+        - text: 칸반
+      - link "결정사항" [ref=e60] [cursor=pointer]:
+        - /url: /decisions
+        - img [ref=e61]
+        - text: 결정사항
+      - link "검색" [ref=e63] [cursor=pointer]:
+        - /url: /search
+        - img [ref=e64]
+        - text: 검색
+      - link "설정" [ref=e67] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e68]
+        - text: 설정
+    - generic [ref=e72]:
+      - img [ref=e74]
+      - generic [ref=e77]:
+        - generic [ref=e78]: 최민준
+        - generic [ref=e79]: 개인 워크스페이스
+      - img [ref=e80]
+  - main [ref=e82]:
+    - generic [ref=e83]:
+      - generic [ref=e84]: WorksOS
+      - generic [ref=e86]:
+        - img [ref=e88]
+        - generic [ref=e91]: 최민준
+        - img [ref=e92]
+    - generic [ref=e96]:
+      - generic [ref=e97]:
+        - heading "GM하위" [level=1] [ref=e98]
+        - button "보관" [ref=e99] [cursor=pointer]:
+          - img [ref=e100]
+          - text: 보관
+      - generic [ref=e104]:
+        - generic:
+          - paragraph
+        - generic [ref=e105]:
+          - generic [ref=e106]: Active
+          - combobox "Project status f00766bc-935e-489b-be13-52374da1f843" [ref=e108]:
+            - option "Active" [selected]
+            - option "On Hold"
+            - option "Done"
+            - option "Archived"
+      - generic [ref=e109]:
+        - button "개요" [ref=e110] [cursor=pointer]
+        - button "작업" [ref=e111] [cursor=pointer]
+        - button "칸반" [ref=e112] [cursor=pointer]
+        - button "회의록" [ref=e113] [cursor=pointer]
+        - button "결정사항" [ref=e114] [cursor=pointer]
+        - button "링크" [ref=e115] [cursor=pointer]
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - generic [ref=e118]: 작업
+          - generic [ref=e119]: "0"
+        - generic [ref=e120]:
+          - generic [ref=e121]: 링크
+          - generic [ref=e122]: "0"
+        - generic [ref=e123]:
+          - generic [ref=e124]: 하위 프로젝트
+          - generic [ref=e125]: "0"
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]:
+              - heading "이 프로젝트에서 지금 움직이는 일" [level=2] [ref=e129]
+              - paragraph [ref=e130]: 프로젝트 상세는 작업 목록이 아니라 실행, 회의록, 결정, 링크를 함께 보는 맥락 허브입니다.
+            - link "작업" [ref=e131] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=tasks
+          - generic [ref=e133]:
+            - generic [ref=e134]: 진행 중인 작업이 없습니다
+            - paragraph [ref=e135]: 바로 실행해야 할 일이 있으면 작업을 만들거나 Inbox에서 전환하세요.
+            - link "작업 생성" [ref=e137] [cursor=pointer]:
+              - /url: /tasks
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - heading "관련 데이터 위치" [level=2] [ref=e140]
+            - paragraph [ref=e141]: SharePoint, CloudDisk, Jira, 로컬 폴더처럼 흩어진 자료 위치를 이곳에 모읍니다.
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]: 아직 연결된 위치가 없습니다
+              - paragraph [ref=e145]: 프로젝트 자료가 어디에 있는지 남기면 다음에 찾는 시간이 줄어듭니다.
+            - link "관련 데이터 위치" [ref=e146] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=links
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - heading "최근 회의록" [level=2] [ref=e149]
+            - paragraph [ref=e150]: 회의에서 나온 맥락과 액션 아이템을 프로젝트 안에서 바로 확인합니다.
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]: 아직 회의록이 없습니다
+              - paragraph [ref=e154]: 회의록 탭에서 첫 회의록을 만들 수 있습니다.
+            - link "회의록" [ref=e155] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843/meeting-notes
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - heading "하위 프로젝트" [level=2] [ref=e158]
+            - paragraph [ref=e159]: 하위 프로젝트는 한 단계까지만 사용해 큰 맥락을 나눕니다.
+          - generic [ref=e160]:
+            - generic [ref=e161]:
+              - heading "하위 프로젝트" [level=2] [ref=e162]
+              - paragraph [ref=e163]: 핵심 맥락을 먼저 만들고, 작업/회의록/결정/링크는 프로젝트 안에서 관리합니다.
+            - generic [ref=e164]:
+              - textbox "제목" [ref=e165]
+              - textbox "설명" [ref=e166]
+              - combobox [ref=e167]:
+                - option "Active" [selected]
+                - option "On Hold"
+                - option "Done"
+                - option "Archived"
+            - generic [ref=e168]:
+              - textbox "태그" [ref=e169]
+              - button "생성" [ref=e170] [cursor=pointer]:
+                - img [ref=e171]
+                - text: 생성
+          - generic [ref=e173]: 표시할 항목이 없습니다

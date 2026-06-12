@@ -1,0 +1,95 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: W
+      - generic [ref=e7]: WorksOS
+    - navigation [ref=e8]:
+      - link "대시보드" [ref=e9] [cursor=pointer]:
+        - /url: /
+        - img [ref=e10]
+        - text: 대시보드
+      - link "Inbox" [ref=e15] [cursor=pointer]:
+        - /url: /inbox
+        - img [ref=e16]
+        - text: Inbox
+      - link "프로젝트" [ref=e19] [cursor=pointer]:
+        - /url: /projects
+        - img [ref=e20]
+        - text: 프로젝트
+      - generic [ref=e30]:
+        - generic [ref=e31]: 활성 프로젝트
+        - generic [ref=e32]:
+          - link "GM하위" [ref=e33] [cursor=pointer]:
+            - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+          - generic [ref=e34]:
+            - link "개요" [ref=e35] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+            - link "작업" [ref=e36] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=tasks
+            - link "칸반" [ref=e37] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=kanban
+            - link "회의록" [ref=e38] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843/meeting-notes
+        - generic [ref=e39]:
+          - link "5234" [ref=e40] [cursor=pointer]:
+            - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+          - generic [ref=e41]:
+            - link "개요" [ref=e42] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+            - link "작업" [ref=e43] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=tasks
+            - link "칸반" [ref=e44] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=kanban
+            - link "회의록" [ref=e45] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6/meeting-notes
+        - generic [ref=e46]:
+          - link "GM" [ref=e47] [cursor=pointer]:
+            - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+          - generic [ref=e48]:
+            - link "개요" [ref=e49] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+            - link "작업" [ref=e50] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=tasks
+            - link "칸반" [ref=e51] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=kanban
+            - link "회의록" [ref=e52] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3/meeting-notes
+      - link "작업" [ref=e53] [cursor=pointer]:
+        - /url: /tasks
+        - img [ref=e54]
+        - text: 작업
+      - link "칸반" [ref=e57] [cursor=pointer]:
+        - /url: /kanban
+        - img [ref=e58]
+        - text: 칸반
+      - link "결정사항" [ref=e60] [cursor=pointer]:
+        - /url: /decisions
+        - img [ref=e61]
+        - text: 결정사항
+      - link "검색" [ref=e63] [cursor=pointer]:
+        - /url: /search
+        - img [ref=e64]
+        - text: 검색
+      - link "설정" [ref=e67] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e68]
+        - text: 설정
+    - generic [ref=e72]:
+      - img [ref=e74]
+      - generic [ref=e77]:
+        - generic [ref=e78]: 최민준
+        - generic [ref=e79]: 개인 워크스페이스
+      - img [ref=e80]
+  - main [ref=e82]:
+    - generic [ref=e83]:
+      - generic [ref=e84]: WorksOS
+      - generic [ref=e86]:
+        - img [ref=e88]
+        - generic [ref=e91]: 최민준
+        - img [ref=e92]
+    - generic [ref=e96]:
+      - heading "결정사항" [level=1] [ref=e98]
+      - generic [ref=e99]:
+        - heading "결정사항" [level=2] [ref=e100]
+        - paragraph [ref=e101]: 결정사항은 회의와 프로젝트에서 확정된 판단을 기록하는 공간입니다. 아직 본 구현 전이므로 빈 결과 대신 역할과 범위를 명확히 표시합니다.
+        - generic [ref=e102]: 아직 구현되지 않은 Phase 범위입니다. 빈 화면 오류가 아니라 의도적으로 대기 중인 기능입니다.

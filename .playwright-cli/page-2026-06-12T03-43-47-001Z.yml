@@ -1,0 +1,144 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: W
+      - generic [ref=e7]: WorksOS
+    - navigation [ref=e8]:
+      - link "대시보드" [ref=e9] [cursor=pointer]:
+        - /url: /
+        - img [ref=e10]
+        - text: 대시보드
+      - link "Inbox" [ref=e15] [cursor=pointer]:
+        - /url: /inbox
+        - img [ref=e16]
+        - text: Inbox
+      - link "프로젝트" [ref=e19] [cursor=pointer]:
+        - /url: /projects
+        - img [ref=e20]
+        - text: 프로젝트
+      - generic [ref=e30]:
+        - generic [ref=e31]: 활성 프로젝트
+        - generic [ref=e32]:
+          - link "GM하위" [ref=e33] [cursor=pointer]:
+            - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+          - generic [ref=e34]:
+            - link "개요" [ref=e35] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843
+            - link "작업" [ref=e36] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=tasks
+            - link "칸반" [ref=e37] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843?tab=kanban
+            - link "회의록" [ref=e38] [cursor=pointer]:
+              - /url: /projects/f00766bc-935e-489b-be13-52374da1f843/meeting-notes
+        - generic [ref=e39]:
+          - link "5234" [ref=e40] [cursor=pointer]:
+            - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+          - generic [ref=e41]:
+            - link "개요" [ref=e42] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6
+            - link "작업" [ref=e43] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=tasks
+            - link "칸반" [ref=e44] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6?tab=kanban
+            - link "회의록" [ref=e45] [cursor=pointer]:
+              - /url: /projects/2244d50b-f6fb-4c69-9342-f869c5c8f0a6/meeting-notes
+        - generic [ref=e46]:
+          - link "GM" [ref=e47] [cursor=pointer]:
+            - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+          - generic [ref=e48]:
+            - link "개요" [ref=e49] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3
+            - link "작업" [ref=e50] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=tasks
+            - link "칸반" [ref=e51] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3?tab=kanban
+            - link "회의록" [ref=e52] [cursor=pointer]:
+              - /url: /projects/db63fb35-2411-43a1-aa73-49351c7314b3/meeting-notes
+      - link "작업" [ref=e53] [cursor=pointer]:
+        - /url: /tasks
+        - img [ref=e54]
+        - text: 작업
+      - link "칸반" [ref=e57] [cursor=pointer]:
+        - /url: /kanban
+        - img [ref=e58]
+        - text: 칸반
+      - link "결정사항" [ref=e60] [cursor=pointer]:
+        - /url: /decisions
+        - img [ref=e61]
+        - text: 결정사항
+      - link "검색" [ref=e63] [cursor=pointer]:
+        - /url: /search
+        - img [ref=e64]
+        - text: 검색
+      - link "설정" [ref=e67] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e68]
+        - text: 설정
+    - generic [ref=e72]:
+      - img [ref=e74]
+      - generic [ref=e77]:
+        - generic [ref=e78]: 최민준
+        - generic [ref=e79]: 개인 워크스페이스
+      - img [ref=e80]
+  - main [ref=e82]:
+    - generic [ref=e83]:
+      - generic [ref=e84]: WorksOS
+      - generic [ref=e86]:
+        - img [ref=e88]
+        - generic [ref=e91]: 최민준
+        - img [ref=e92]
+    - generic [ref=e96]:
+      - heading "칸반" [level=1] [ref=e98]
+      - generic [ref=e99]:
+        - heading "Kanban은 실행 상태를 보는 보드입니다" [level=2] [ref=e100]
+        - paragraph [ref=e101]: Dashboard의 Kanban은 빠른 현황 확인용이고, 이 페이지는 전체 작업 상태를 넓게 조정하는 전용 보드입니다.
+        - generic [ref=e102]:
+          - generic [ref=e103]: "전체 보드: 프로젝트를 넘나드는 실행 흐름"
+          - generic [ref=e104]: "프로젝트 보드: 프로젝트 상세 탭에서 해당 맥락만 확인"
+      - generic [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - generic [ref=e108]: Open
+            - generic [ref=e110]: "2"
+          - generic [ref=e111]:
+            - button "23462345 Medium - 프로젝트 없음" [ref=e112] [cursor=pointer]:
+              - generic [ref=e113]:
+                - link "23462345" [ref=e116]:
+                  - /url: /tasks/5beddab5-25db-4e37-9c28-63f4106826c0
+                - generic [ref=e118]: Medium
+              - generic [ref=e119]:
+                - generic [ref=e120]: "-"
+                - generic [ref=e121]: 프로젝트 없음
+            - button "3462345 Medium - 프로젝트 없음" [ref=e122] [cursor=pointer]:
+              - generic [ref=e123]:
+                - link "3462345" [ref=e126]:
+                  - /url: /tasks/bc7398a7-3363-46aa-a106-eb283798d75a
+                - generic [ref=e128]: Medium
+              - generic [ref=e129]:
+                - generic [ref=e130]: "-"
+                - generic [ref=e131]: 프로젝트 없음
+        - generic [ref=e133]:
+          - generic [ref=e134]: In Progress
+          - generic [ref=e136]: "0"
+        - generic [ref=e138]:
+          - generic [ref=e139]: Waiting
+          - generic [ref=e141]: "0"
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - generic [ref=e144]: Hold
+            - generic [ref=e146]: "1"
+          - button "GM 업무 - 1 Medium 2026. 6. 11. GM" [ref=e148] [cursor=pointer]:
+            - generic [ref=e149]:
+              - link "GM 업무 - 1" [ref=e152]:
+                - /url: /tasks/3b8219c6-af41-486a-96d4-ac313128ae3c
+              - generic [ref=e154]: Medium
+            - generic [ref=e155]:
+              - generic [ref=e156]: 2026. 6. 11.
+              - generic [ref=e157]: GM
+        - generic [ref=e159]:
+          - generic [ref=e160]: Done
+          - generic [ref=e162]: "0"
+        - generic [ref=e164]:
+          - generic [ref=e165]: Canceled
+          - generic [ref=e167]: "0"
+      - status [ref=e168]

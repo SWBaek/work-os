@@ -1,0 +1,166 @@
+{
+  "phase": 3.7,
+  "title": "Human Feedback UX Trust Hardening Gate",
+  "title_ko": "사용자 피드백 UX 신뢰성 보강 게이트",
+  "description": "Before Phase 4 Tags & Search, harden direct-user trust gaps in Dashboard capture, Inbox triage, Project context, Kanban clarity, and navigation roles.",
+  "status": "completed",
+  "progress_summary": {
+    "total_tasks": 10,
+    "not_started": 0,
+    "in_progress": 0,
+    "completed": 10,
+    "blocked": 0,
+    "skipped": 0
+  },
+  "priority": "Critical",
+  "dependencies": [
+    "Phase 0",
+    "Phase 1",
+    "Phase 2",
+    "Phase 3",
+    "Phase 3.5",
+    "Phase 3.6"
+  ],
+  "source_artifacts": [
+    "docs/reviews/user-feedback/2026-06-11-human-feedback.md",
+    ".omx/specs/deep-interview-human-feedback-phase-gate.md",
+    ".omx/plans/prd-human-feedback-phase-gate.md",
+    ".omx/plans/test-spec-human-feedback-phase-gate.md",
+    ".omx/plans/adr-human-feedback-phase-gate.md",
+    ".omx/plans/ralplan-consensus-human-feedback-phase-gate.md"
+  ],
+  "scope_guardrails": [
+    "Do not remove top-level Tasks in this gate.",
+    "Do not remove top-level Kanban in this gate.",
+    "Do not convert Meeting Notes to Form-first input in this gate.",
+    "Do not redesign the Project data model or Project Detail IA wholesale.",
+    "Do not implement full Decisions or full Search.",
+    "Do not add external integrations, AI automation, multi-user/auth, or cloud sync."
+  ],
+  "tasks": [
+    {
+      "id": "P3.7-T1",
+      "title": "Create Phase 3.7 plan artifact and block Phase 4",
+      "status": "completed",
+      "progress_notes": [
+        "Created plan/phase_3_7.json and added Phase 3.7 to plan/phase_4.json dependencies before feature work."
+      ]
+    },
+    {
+      "id": "P3.7-T2",
+      "title": "Dashboard capture and Inbox edit/archive/restore",
+      "status": "completed",
+      "progress_notes": [
+        "Dashboard Quick Inbox now supports source type and project selection.",
+        "Dashboard Inbox rows support inline edit for content/source/project and archive with restore path.",
+        "Dashboard now exposes a visible capture-triage-execute guide and a dedicated Quick Inbox capture center so the changed workflow is recognizable on page load."
+      ]
+    },
+    {
+      "id": "P3.7-T3",
+      "title": "Inbox history simplification",
+      "status": "completed",
+      "progress_notes": [
+        "Inbox page remains focused on Unprocessed, Converted, and Archived filters with role copy.",
+        "Inbox History now presents itself as a history/archive surface and links users back to Dashboard for fast capture and immediate triage."
+      ]
+    },
+    {
+      "id": "P3.7-T4",
+      "title": "Project creation, entry, status, and links",
+      "status": "completed",
+      "progress_notes": [
+        "Project creation is grouped, cards have broad detail entry, status filters cover All/Active/On Hold/Done/Archived, detail status can be changed, and links explain their context purpose.",
+        "Projects now show a visible context-hub summary and status meaning cards before the project list."
+      ]
+    },
+    {
+      "id": "P3.7-T5",
+      "title": "Kanban scope and transition clarity",
+      "status": "completed",
+      "progress_notes": [
+        "Dashboard Kanban uses an All/Project segmented control.",
+        "Hold -> Done is allowed and covered by task-status tests and browser QA API verification."
+      ]
+    },
+    {
+      "id": "P3.7-T6",
+      "title": "Product decisions and navigation role notes",
+      "status": "completed",
+      "progress_notes": [
+        "Recorded bounded product decisions in docs/product/phase-3-7-product-decisions.md and added Tasks/Inbox role copy."
+      ]
+    },
+    {
+      "id": "P3.7-T7",
+      "title": "Verify existing audit trail",
+      "status": "completed",
+      "progress_notes": [
+        "Verified AuditLog records exist for InboxItem, Project, and Task mutations after QA cleanup; counts observed: InboxItem 3, Project 5, Task 25."
+      ]
+    },
+    {
+      "id": "P3.7-T8",
+      "title": "Feedback document link hygiene",
+      "status": "completed",
+      "progress_notes": [
+        "Removed stale image.png reference from docs/reviews/user-feedback/2026-06-11-human-feedback.md."
+      ]
+    },
+    {
+      "id": "P3.7-T9",
+      "title": "Validation and browser QA",
+      "status": "completed",
+      "progress_notes": [
+        "npm.cmd run build passed.",
+        "npm.cmd run lint passed.",
+        "npm.cmd run test passed.",
+        "Headless Chromium Playwright QA passed for dashboard create/edit/archive/restore, inbox filters, project status/link help, dashboard kanban scope, Hold -> Done, and non-goal routes."
+      ]
+    },
+    {
+      "id": "P3.7-T10",
+      "title": "Repair visible UX alignment gaps from user re-check",
+      "status": "completed",
+      "progress_notes": [
+        "Reopened Phase 3.7 because browser-visible changes were not sufficient for the user's original complaints.",
+        "Acceptance now requires project detail, standalone Kanban, Decisions, and Search pages to avoid empty/unclear role presentation, not just pass functional controls.",
+        "Implemented visible Project Overview context hub sections, standalone Kanban role explanation, and Decisions/Search not-yet-implemented role explanations.",
+        "Fresh validation passed: npm.cmd run build, npm.cmd run lint, npm.cmd run test.",
+        "Browser DOM QA passed with Playwright CLI against temporary Vite status 200. Evidence: .omx/plans/g003-browser-dom-evidence.json."
+      ]
+    }
+  ],
+  "completion_criteria": [
+    "Dashboard Inbox creation supports source type, project selection, default timestamp behavior, edit, archive/delete, and restore/undo.",
+    "Inbox History is simplified around Unprocessed, Converted, and Archived.",
+    "Project create/open/status/link flows are clear.",
+    "Project status visibility covers Active, On Hold, Done, and Archived in an understandable way.",
+    "Kanban transition limits are fixed or visibly explained; Hold -> Done is explicitly addressed.",
+    "Dashboard Kanban scope uses a toggle-like All vs Project interaction.",
+    "Non-goal structural changes are documented and not accidentally implemented.",
+    "Human feedback image reference is corrected.",
+    "Phase 4 remains blocked until Phase 3.7 passes.",
+    "npm.cmd run build, npm.cmd run lint, npm.cmd run test, and browser QA pass."
+    ,"User re-check concerns are addressed with browser-visible role, path, and context improvements on the pages that previously felt unchanged or empty."
+  ],
+  "verification": {
+    "cli": [
+      "npm.cmd run build",
+      "npm.cmd run lint",
+      "npm.cmd run test"
+    ],
+    "browser_qa": "Headless Chromium Playwright script passed on http://localhost:5173 with backend http://localhost:3080.",
+    "audit_log_counts": {
+      "InboxItem": 3,
+      "Project": 5,
+      "Task": 25
+    }
+  },
+  "progress_notes": [
+    "Phase 3.7 started from approved RALPLAN handoff.",
+    "Phase 4 dependency gate was updated before feature implementation.",
+    "Phase 3.7 was reopened after user re-check showed the prior completion criteria over-weighted functional controls and under-weighted visible UX alignment.",
+    "G003 visible UX alignment pass completed with Project detail context hub, standalone Kanban role clarity, Decisions/Search pending-phase clarity, build/lint/test, and Playwright browser DOM evidence."
+  ]
+}

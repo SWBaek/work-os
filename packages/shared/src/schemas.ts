@@ -40,6 +40,7 @@ export const CreateInboxItemSchema = z.object({
 
 export const UpdateInboxItemSchema = CreateInboxItemSchema.partial();
 export const PatchInboxItemSchema = UpdateInboxItemSchema.extend({
+  project_id: z.string().uuid().optional().nullable(),
   status: z.enum(enumValues(InboxStatus)).optional()
 });
 

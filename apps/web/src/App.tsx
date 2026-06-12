@@ -17,7 +17,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { InboxStatus, Priority, ProjectStatus, SourceType, TaskStatus } from 'shared';
+import { InboxStatus, LinkType, Priority, ProjectStatus, SourceType, TaskStatus } from 'shared';
 import api from './lib/api';
 import t from './lib/i18n/ko.json';
 import { statusColors, priorityClasses, taskStatuses, toTags, isoOrUndefined } from './constants';
@@ -48,6 +48,7 @@ const ConfirmAction = ({
   variant = 'secondary',
   disabled,
   onConfirm,
+  ariaLabel,
 }: {
   label: string;
   title: string;
@@ -56,11 +57,12 @@ const ConfirmAction = ({
   variant?: 'secondary' | 'danger' | 'ghost';
   disabled?: boolean;
   onConfirm: () => void;
+  ariaLabel?: string;
 }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant={variant} disabled={disabled} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(true); }}>
+      <Button aria-label={ariaLabel} variant={variant} disabled={disabled} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(true); }}>
         {icon}
         {label}
       </Button>
@@ -171,11 +173,12 @@ const TaskCard = ({
 
 const QuickInbox = () => {
   const projects = useProjects();
+  const [sourceType, setSourceType] = useState<SourceType>(SourceType.OTHER);
   const [rawContent, setRawContent] = useState('');
   const [projectId, setProjectId] = useState('');
   const queryClient = useQueryClient();
   const createInbox = useMutation({
-    mutationFn: async () => api.post('/inbox', { source_type: SourceType.OTHER, raw_content: rawContent, project_id: projectId || undefined }),
+    mutationFn: async () => api.post('/inbox', { source_type: sourceType, raw_content: rawContent, project_id: projectId || undefined }),
     onSuccess: async () => {
       setRawContent('');
       await queryClient.invalidateQueries({ queryKey: ['inbox'] });
@@ -188,25 +191,67 @@ const QuickInbox = () => {
     createInbox.mutate();
   };
   return (
-    <form onSubmit={(event) => { event.preventDefault(); submitQuickInbox(); }} className="grid grid-cols-[1fr_220px_auto] gap-2">
-      <Input
-        value={rawContent}
-        onChange={(event) => setRawContent(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            submitQuickInbox();
-          }
-        }}
-        placeholder={t.quickInboxPlaceholder}
-        className="h-12 rounded-lg"
-      />
-      <Select className="h-12 rounded-full" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-        <option value="">{t.general}</option>
-        {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-      </Select>
-      <Button type="submit" disabled={createInbox.isPending}><Plus className="h-4 w-4" />{t.create}</Button>
-    </form>
+    <section className="rounded-xl border border-primary/20 bg-primary-soft/40 p-4">
+      <div className="mb-3 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-[18px] font-semibold text-heading">{t.captureCenterTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.captureCenterSubtitle}</p>
+        </div>
+        <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold text-primary">{t.dashboardPrimaryAction}</span>
+      </div>
+      <form onSubmit={(event) => { event.preventDefault(); submitQuickInbox(); }} className="grid gap-2 lg:grid-cols-[160px_1fr_220px_auto]">
+        <label className="block space-y-1">
+          <span className="text-xs font-semibold text-muted-foreground">{t.sourceKind}</span>
+          <Select className="h-12 w-full rounded-lg bg-background" value={sourceType} onChange={(event) => setSourceType(event.target.value as SourceType)} aria-label={t.source}>
+            {Object.values(SourceType).map((value) => <option key={value} value={value}>{value}</option>)}
+          </Select>
+        </label>
+        <label className="block space-y-1">
+          <span className="text-xs font-semibold text-muted-foreground">{t.captureContent}</span>
+          <Input
+            value={rawContent}
+            onChange={(event) => setRawContent(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                submitQuickInbox();
+              }
+            }}
+            placeholder={t.quickInboxPlaceholder}
+            className="h-12 w-full rounded-lg bg-background"
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-xs font-semibold text-muted-foreground">{t.assignProject}</span>
+          <Select className="h-12 w-full rounded-lg bg-background" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+            <option value="">{t.general}</option>
+            {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          </Select>
+        </label>
+        <div className="flex items-end">
+          <Button type="submit" className="h-12 w-full justify-center" disabled={createInbox.isPending || !rawContent.trim()}><Plus className="h-4 w-4" />{t.create}</Button>
+        </div>
+      </form>
+    </section>
+  );
+};
+
+const OperationsGuide = () => {
+  const steps = [
+    { title: t.workflowCaptureTitle, body: t.workflowCaptureBody },
+    { title: t.workflowTriageTitle, body: t.workflowTriageBody },
+    { title: t.workflowExecuteTitle, body: t.workflowExecuteBody },
+  ];
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      {steps.map((step, index) => (
+        <div key={step.title} className="rounded-xl border border-border bg-background p-4">
+          <div className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary">{index + 1}</div>
+          <div className="font-semibold text-heading">{step.title}</div>
+          <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -243,33 +288,122 @@ const PriorityPill = ({ priority }: { priority: Priority }) => {
   return <span className={`rounded-md px-2 py-1 text-xs font-semibold ${classes[priority]}`}>{priority}</span>;
 };
 
-const DashboardInboxTable = ({ items }: { items: InboxItem[] }) => (
-  <div className="overflow-hidden px-4 pb-4">
-    <div className="grid grid-cols-[120px_1fr_120px_160px_90px] border-b border-border py-2 text-xs font-semibold text-heading">
-      <span>{t.source}</span>
-      <span>{t.content}</span>
-      <span>{t.received}</span>
-      <span>{t.project}</span>
-      <span>{t.priority}</span>
-    </div>
-    {items.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">{t.empty}</div> : null}
-    {items.map((item) => (
-      <div key={item.id} className="grid min-h-[48px] grid-cols-[120px_1fr_120px_160px_90px] items-center border-b border-border last:border-b-0">
-        <div className="flex items-center gap-2 text-sm font-semibold text-heading">
-          <SourceIcon source={item.source_type} />
-          {item.source_type}
+const DashboardInboxRow = ({
+  item,
+  projects,
+  onSaved,
+  onArchived,
+}: {
+  item: InboxItem;
+  projects: Project[];
+  onSaved: () => Promise<void>;
+  onArchived: (item: InboxItem) => void;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [rawContent, setRawContent] = useState(item.raw_content);
+  const [sourceType, setSourceType] = useState<SourceType>(item.source_type);
+  const [projectId, setProjectId] = useState(item.project?.id ?? '');
+  const updateInbox = useMutation({
+    mutationFn: async () => api.patch(`/inbox/${item.id}`, {
+      raw_content: rawContent,
+      source_type: sourceType,
+      project_id: projectId || null,
+    }),
+    onSuccess: async () => {
+      await onSaved();
+      setEditing(false);
+    },
+  });
+  const archiveInbox = useMutation({
+    mutationFn: async () => api.delete(`/inbox/${item.id}`),
+    onSuccess: () => onArchived(item),
+  });
+
+  if (editing) {
+    return (
+      <div className="grid gap-2 border-b border-border py-3 last:border-b-0 lg:grid-cols-[140px_1fr_180px_auto]">
+        <Select value={sourceType} onChange={(event) => setSourceType(event.target.value as SourceType)}>
+          {Object.values(SourceType).map((value) => <option key={value} value={value}>{value}</option>)}
+        </Select>
+        <Input value={rawContent} onChange={(event) => setRawContent(event.target.value)} />
+        <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+          <option value="">{t.general}</option>
+          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </Select>
+        <div className="flex justify-end gap-2">
+          <Button aria-label={`Save inbox ${item.id}`} variant="secondary" onClick={() => updateInbox.mutate()} disabled={updateInbox.isPending || !rawContent.trim()}>{t.save}</Button>
+          <Button variant="ghost" onClick={() => setEditing(false)}>{t.cancel}</Button>
         </div>
-        <Link to="/inbox" className="truncate pr-4 text-sm font-semibold text-heading hover:text-primary">{item.raw_content}</Link>
-        <span className="text-sm text-muted-foreground">{t.newItem}</span>
-        <span className="truncate rounded-md border border-border bg-surface px-2 py-1 text-sm text-heading">{item.project?.name ?? t.general}</span>
-        <PriorityPill priority={item.converted_tasks[0]?.priority ?? Priority.MEDIUM} />
       </div>
-    ))}
-    <div className="pt-4 text-center">
-      <Link to="/inbox" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">{t.viewAll}<ChevronRight className="h-4 w-4" /></Link>
+    );
+  }
+
+  return (
+    <div className="grid min-h-[52px] gap-3 border-b border-border py-3 last:border-b-0 lg:grid-cols-[120px_1fr_160px_190px] lg:items-center">
+      <div className="flex items-center gap-2 text-sm font-semibold text-heading">
+        <SourceIcon source={item.source_type} />
+        {item.source_type}
+      </div>
+      <Link to="/inbox" className="truncate pr-4 text-sm font-semibold text-heading hover:text-primary">{item.raw_content}</Link>
+      <span className="truncate rounded-md border border-border bg-surface px-2 py-1 text-sm text-heading">{item.project?.name ?? t.general}</span>
+      <div className="flex flex-wrap justify-end gap-2">
+        <PriorityPill priority={item.converted_tasks[0]?.priority ?? Priority.MEDIUM} />
+        <Button aria-label={`Edit inbox ${item.id}`} variant="secondary" onClick={() => setEditing(true)}>{t.edit}</Button>
+        <ConfirmAction
+          label={t.archive}
+          title={t.archiveConfirmTitle}
+          message={t.archiveInboxImpact}
+          icon={<Archive className="h-4 w-4" />}
+          onConfirm={() => archiveInbox.mutate()}
+          disabled={archiveInbox.isPending}
+          ariaLabel={`Archive inbox ${item.id}`}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+const DashboardInboxTable = ({ items }: { items: InboxItem[] }) => {
+  const projects = useProjects();
+  const queryClient = useQueryClient();
+  const [notice, setNotice] = useState<ActionNotice | null>(null);
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['inbox'] });
+    await queryClient.invalidateQueries({ queryKey: ['inbox', 'dashboard'] });
+    await queryClient.invalidateQueries({ queryKey: ['unprocessed-count'] });
+  };
+  const restoreInbox = useMutation({
+    mutationFn: async (item: InboxItem) => api.patch(`/inbox/${item.id}/restore`),
+    onSuccess: invalidate,
+  });
+  return (
+    <div className="overflow-hidden px-4 pb-4">
+      <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
+      <div className="mt-3 hidden grid-cols-[120px_1fr_160px_190px] border-b border-border py-2 text-xs font-semibold text-heading lg:grid">
+        <span>{t.source}</span>
+        <span>{t.content}</span>
+        <span>{t.project}</span>
+        <span className="text-right">{t.actions}</span>
+      </div>
+      {items.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">{t.empty}</div> : null}
+      {items.map((item) => (
+        <DashboardInboxRow
+          key={item.id}
+          item={item}
+          projects={projects.data ?? []}
+          onSaved={invalidate}
+          onArchived={async (archivedItem) => {
+            await invalidate();
+            setNotice({ message: `${archivedItem.raw_content.slice(0, 48)} ${t.archived}`, onUndo: () => restoreInbox.mutate(archivedItem) });
+          }}
+        />
+      ))}
+      <div className="pt-4 text-center">
+        <Link to="/inbox" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">{t.viewAll}<ChevronRight className="h-4 w-4" /></Link>
+      </div>
+    </div>
+  );
+};
 
 const WorkOverview = ({ summary }: { summary?: DashboardSummary }) => {
   const items = [
@@ -278,7 +412,7 @@ const WorkOverview = ({ summary }: { summary?: DashboardSummary }) => {
     { label: t.waiting, sub: t.waitingHelp, value: summary?.waiting ?? 0, color: statusColors[TaskStatus.WAITING] },
   ];
   return (
-    <div className="w-[640px] shrink-0 rounded-xl border border-border bg-background px-3 py-2">
+    <div className="w-full max-w-[640px] rounded-xl border border-border bg-background px-3 py-2 xl:shrink-0">
       <div className="mb-2 text-xs font-semibold text-heading">{t.workOverview}</div>
       <div className="flex gap-2">
         {items.map((item) => (
@@ -332,10 +466,19 @@ const DashboardKanbanScope = () => {
         title={t.projectsAndTasks}
         action={(
           <div className="flex items-center gap-2">
-            <Select className="w-[120px]" value={scope} onChange={(event) => setScope(event.target.value as 'all' | 'project')}>
-              <option value="all">{t.all}</option>
-              <option value="project">{t.project}</option>
-            </Select>
+            <div className="inline-flex rounded-full border border-border bg-surface p-1">
+              {(['all', 'project'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setScope(value)}
+                  aria-label={`Kanban scope ${value}`}
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${scope === value ? 'bg-background text-primary' : 'text-muted-foreground hover:text-heading'}`}
+                >
+                  {value === 'all' ? t.all : t.project}
+                </button>
+              ))}
+            </div>
             {scope === 'project' ? (
               <Select className="w-[180px]" value={selectedProjectId ?? ''} onChange={(event) => setProjectId(event.target.value)}>
                 {(projects.data ?? []).map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
@@ -355,13 +498,14 @@ const Dashboard = () => {
   const inboxItems = inbox.data ?? [];
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-6">
-        <div className="min-w-0">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_640px] xl:items-start">
+        <div className="min-w-0 rounded-xl border border-border bg-background p-4">
           <h1 className="text-[24px] font-bold text-heading">{t.greeting}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t.dashboardSubtitle}</p>
         </div>
         <WorkOverview summary={summaryQuery.data} />
       </div>
+      <OperationsGuide />
       <QuickInbox />
       <DashboardPanel>
         <PanelTitle
@@ -397,25 +541,33 @@ const ProjectForm = ({ parentId }: { parentId?: string }) => {
     },
   });
   return (
-    <form onSubmit={(event) => { event.preventDefault(); if (name.trim()) mutation.mutate(); }} className="grid grid-cols-[1fr_1fr_140px_auto] gap-2">
-      <Input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.title} />
-      <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t.description} />
-      <Select value={status} onChange={(event) => setStatus(event.target.value as ProjectStatus)}>
-        {Object.values(ProjectStatus).map((value) => <option key={value} value={value}>{value}</option>)}
-      </Select>
-      <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.tags} />
-      <Button type="submit" disabled={mutation.isPending}><Plus className="h-4 w-4" />{t.create}</Button>
+    <form onSubmit={(event) => { event.preventDefault(); if (name.trim()) mutation.mutate(); }} className="rounded-xl border border-border bg-background p-4">
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold text-heading">{parentId ? t.subProjects : t.createProject}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">{t.projectCreateHelp}</p>
+      </div>
+      <div className="grid gap-2 lg:grid-cols-[1fr_1fr_140px]">
+        <Input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.title} />
+        <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t.description} />
+        <Select value={status} onChange={(event) => setStatus(event.target.value as ProjectStatus)}>
+          {Object.values(ProjectStatus).map((value) => <option key={value} value={value}>{value}</option>)}
+        </Select>
+      </div>
+      <div className="mt-2 flex gap-2">
+        <Input value={tags} onChange={(event) => setTags(event.target.value)} placeholder={t.tags} />
+        <Button type="submit" disabled={mutation.isPending}><Plus className="h-4 w-4" />{t.create}</Button>
+      </div>
     </form>
   );
 };
 
 const Projects = () => {
-  const [statusFilter, setStatusFilter] = useState<'active' | ProjectStatus>('active');
+  const [statusFilter, setStatusFilter] = useState<'all' | ProjectStatus>('all');
   const [notice, setNotice] = useState<ActionNotice | null>(null);
   const queryClient = useQueryClient();
   const projects = useQuery({
     queryKey: ['projects', statusFilter],
-    queryFn: async () => (await api.get<ApiList<Project>>(statusFilter === ProjectStatus.ARCHIVED ? `/projects?status=${encodeURIComponent(ProjectStatus.ARCHIVED)}` : '/projects')).data.data,
+    queryFn: async () => (await api.get<ApiList<Project>>(statusFilter === 'all' ? '/projects' : `/projects?status=${encodeURIComponent(statusFilter)}`)).data.data,
   });
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -433,20 +585,76 @@ const Projects = () => {
       setNotice({ message: `${project.name} ${t.archived}`, onUndo: () => restoreProject.mutate(project) });
     },
   });
+  const filters: Array<{ value: 'all' | ProjectStatus; label: string }> = [
+    { value: 'all', label: t.all },
+    { value: ProjectStatus.ACTIVE, label: ProjectStatus.ACTIVE },
+    { value: ProjectStatus.ON_HOLD, label: ProjectStatus.ON_HOLD },
+    { value: ProjectStatus.DONE, label: ProjectStatus.DONE },
+    { value: ProjectStatus.ARCHIVED, label: ProjectStatus.ARCHIVED },
+  ];
+  const visibleProjects = projects.data ?? [];
+  const statusSummary = [
+    { status: ProjectStatus.ACTIVE, label: t.activeProjectHelp, count: visibleProjects.filter((project) => project.status === ProjectStatus.ACTIVE).length },
+    { status: ProjectStatus.ON_HOLD, label: t.onHoldProjectHelp, count: visibleProjects.filter((project) => project.status === ProjectStatus.ON_HOLD).length },
+    { status: ProjectStatus.DONE, label: t.doneProjectHelp, count: visibleProjects.filter((project) => project.status === ProjectStatus.DONE).length },
+  ];
   return (
     <div className="space-y-4">
       <PageHeader title={t.projects} />
       <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
+      <section className="rounded-xl border border-border bg-background p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[18px] font-semibold text-heading">{t.projectHubTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t.projectHubSubtitle}</p>
+          </div>
+          <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">{t.projectDefaultView}</span>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {statusSummary.map((item) => (
+            <button
+              key={item.status}
+              type="button"
+              onClick={() => setStatusFilter(item.status)}
+              className="rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:bg-surface-2"
+            >
+              <div className="flex items-center justify-between">
+                <StatusBadge status={item.status} />
+                <span className="text-[18px] font-bold text-heading">{item.count}</span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{item.label}</p>
+            </button>
+          ))}
+        </div>
+      </section>
       <ProjectForm />
-      <div className="flex gap-2">
-        <button type="button" onClick={() => setStatusFilter('active')} className={`rounded-full px-3 py-1 text-sm ${statusFilter === 'active' ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.active}</button>
-        <button type="button" onClick={() => setStatusFilter(ProjectStatus.ARCHIVED)} className={`rounded-full px-3 py-1 text-sm ${statusFilter === ProjectStatus.ARCHIVED ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}>{t.archived}</button>
+      <div className="rounded-xl border border-border bg-background p-3">
+        <div className="mb-2 text-sm font-semibold text-heading">{t.projectFilterHelp}</div>
+        <div className="flex flex-wrap gap-2">
+        {filters.map((filter) => (
+          <button
+            key={filter.value}
+            type="button"
+            onClick={() => setStatusFilter(filter.value)}
+            aria-label={`Project filter ${filter.value}`}
+            className={`rounded-full px-3 py-1 text-sm ${statusFilter === filter.value ? 'bg-primary-soft font-semibold text-primary' : 'text-foreground hover:bg-surface-2'}`}
+          >
+            {filter.label}
+          </button>
+        ))}
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {(projects.data ?? []).map((project) => (
-          <div key={project.id} className="rounded-lg border border-border p-4 hover:bg-surface">
+        {visibleProjects.map((project) => (
+          <div
+            key={project.id}
+            className="rounded-lg border border-border p-4 transition-colors hover:bg-surface"
+          >
             <div className="flex items-start justify-between gap-2">
-              <Link to={`/projects/${project.id}`} className="min-w-0 font-semibold text-heading hover:text-primary">{project.name}</Link>
+              <Link to={`/projects/${project.id}`} className="min-w-0 flex-1 rounded-md outline-none focus:ring-2 focus:ring-primary/20">
+                <div className="font-semibold text-heading">{project.name}</div>
+                <div className="mt-1 text-xs font-semibold text-primary">{t.openProject}</div>
+              </Link>
               <div className="flex shrink-0 items-center gap-2">
                 <StatusBadge status={project.status} />
                 {statusFilter === ProjectStatus.ARCHIVED ? (
@@ -465,9 +673,11 @@ const Projects = () => {
                 )}
               </div>
             </div>
-            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{project.description ?? '-'}</p>
-            <div className="mt-3 flex flex-wrap gap-1">{project.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
-            <div className="mt-3 text-xs text-muted-foreground">{project._count?.tasks ?? 0} {t.taskCount} · {project._count?.links ?? 0} {t.linkCount}</div>
+            <Link to={`/projects/${project.id}`} className="mt-2 block rounded-md outline-none focus:ring-2 focus:ring-primary/20">
+              <p className="line-clamp-2 text-sm text-muted-foreground">{project.description ?? '-'}</p>
+              <div className="mt-3 flex flex-wrap gap-1">{project.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
+              <div className="mt-3 text-xs text-muted-foreground">{project._count?.tasks ?? 0} {t.taskCount} · {project._count?.links ?? 0} {t.linkCount}</div>
+            </Link>
           </div>
         ))}
       </div>
@@ -486,17 +696,33 @@ const projectTabs = [
 
 type ProjectTabKey = (typeof projectTabs)[number]['key'];
 
-const ProjectHeaderCard = ({ project }: { project: Project }) => (
-  <section className="rounded-lg border border-border p-4">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-muted-foreground">{project.description ?? '-'}</p>
-        <div className="mt-2 flex flex-wrap gap-1">{project.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
+const ProjectHeaderCard = ({ project }: { project: Project }) => {
+  const queryClient = useQueryClient();
+  const updateStatus = useMutation({
+    mutationFn: async (status: ProjectStatus) => api.patch(`/projects/${project.id}`, { status }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['layout-projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+    },
+  });
+  return (
+    <section className="rounded-lg border border-border p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-muted-foreground">{project.description ?? '-'}</p>
+          <div className="mt-2 flex flex-wrap gap-1">{project.tags.map((tag) => <Badge key={tag.id}>{tag.name}</Badge>)}</div>
+        </div>
+        <div className="w-[180px] shrink-0 space-y-2">
+          <StatusBadge status={project.status} />
+          <Select value={project.status} onChange={(event) => updateStatus.mutate(event.target.value as ProjectStatus)} disabled={updateStatus.isPending} aria-label={`Project status ${project.id}`}>
+            {Object.values(ProjectStatus).map((value) => <option key={value} value={value}>{value}</option>)}
+          </Select>
+        </div>
       </div>
-      <StatusBadge status={project.status} />
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const ProjectTabBar = ({ projectId, activeTab }: { projectId: string; activeTab: ProjectTabKey }) => {
   const navigate = useNavigate();
@@ -525,6 +751,100 @@ const ProjectTabBar = ({ projectId, activeTab }: { projectId: string; activeTab:
           {tab.label}
         </button>
       ))}
+    </div>
+  );
+};
+
+const EmptyStateCard = ({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) => (
+  <div className="rounded-lg border border-border bg-surface p-4">
+    <div className="font-semibold text-heading">{title}</div>
+    <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+    {action ? <div className="mt-3">{action}</div> : null}
+  </div>
+);
+
+const ProjectOverview = ({ project }: { project: Project }) => {
+  const inactiveStatuses: TaskStatus[] = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.CANCELED];
+  const activeTasks = (project.tasks ?? []).filter((task) => !inactiveStatuses.includes(task.status));
+  const recentNotes = (project.meeting_notes ?? []).slice(0, 3);
+  const links = (project.links ?? []).slice(0, 4);
+  const subProjects = project.sub_projects ?? [];
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      <Metric label={t.tasks} value={project.tasks?.length ?? 0} />
+      <Metric label={t.links} value={project.links?.length ?? 0} />
+      <Metric label={t.subProjects} value={subProjects.length} />
+      <section className="lg:col-span-2 rounded-lg border border-border bg-background p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-heading">{t.projectOverviewTasksTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t.projectOverviewTasksBody}</p>
+          </div>
+          <Link to={`/projects/${project.id}?tab=tasks`} className="text-sm font-semibold text-primary">{t.tasks}</Link>
+        </div>
+        <div className="space-y-2">
+          {activeTasks.length === 0 ? (
+            <EmptyStateCard
+              title={t.projectNoActiveTasksTitle}
+              body={t.projectNoActiveTasksBody}
+              action={<Link to="/tasks" className="text-sm font-semibold text-primary">{t.createTask}</Link>}
+            />
+          ) : null}
+          {activeTasks.slice(0, 4).map((task) => <TaskCard key={task.id} task={task} />)}
+        </div>
+      </section>
+      <section className="rounded-lg border border-border bg-background p-4">
+        <div className="mb-3">
+          <h2 className="font-semibold text-heading">{t.projectOverviewLinksTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.projectOverviewLinksBody}</p>
+        </div>
+        <div className="space-y-2">
+          {links.length === 0 ? (
+            <EmptyStateCard title={t.projectNoLinksTitle} body={t.projectNoLinksBody} />
+          ) : null}
+          {links.map((link) => (
+            <a
+              key={link.id}
+              href={link.url_or_path}
+              className="flex items-center gap-2 rounded-lg bg-surface p-3 text-sm font-semibold text-heading hover:bg-surface-2"
+            >
+              <LinkIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="min-w-0 flex-1 truncate">{link.title ?? link.url_or_path}</span>
+            </a>
+          ))}
+          <Link to={`/projects/${project.id}?tab=links`} className="inline-flex text-sm font-semibold text-primary">{t.projectLinksPurpose}</Link>
+        </div>
+      </section>
+      <section className="rounded-lg border border-border bg-background p-4">
+        <div className="mb-3">
+          <h2 className="font-semibold text-heading">{t.projectOverviewNotesTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.projectOverviewNotesBody}</p>
+        </div>
+        <div className="space-y-2">
+          {recentNotes.length === 0 ? (
+            <EmptyStateCard title={t.projectNoNotesTitle} body={t.projectNoNotesBody} />
+          ) : null}
+          {recentNotes.map((note) => (
+            <Link key={note.id} to={`/projects/${project.id}/meeting-notes/${note.id}`} className="block rounded-lg bg-surface p-3 hover:bg-surface-2">
+              <div className="truncate text-sm font-semibold text-heading">{note.title ?? t.meetingNotes}</div>
+              <div className="text-xs text-muted-foreground">{note.meeting_date ? new Date(note.meeting_date).toLocaleDateString('ko-KR') : '-'}</div>
+            </Link>
+          ))}
+          <Link to={`/projects/${project.id}/meeting-notes`} className="inline-flex text-sm font-semibold text-primary">{t.meetingNotes}</Link>
+        </div>
+      </section>
+      <section className="lg:col-span-2 rounded-lg border border-border bg-background p-4">
+        <div className="mb-3">
+          <h2 className="font-semibold text-heading">{t.subProjects}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.projectOverviewSubProjectsBody}</p>
+        </div>
+        <ProjectForm parentId={project.id} />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {subProjects.length === 0 ? <span className="text-sm text-muted-foreground">{t.empty}</span> : null}
+          {subProjects.map((sub) => <Badge key={sub.id}>{sub.name}</Badge>)}
+        </div>
+      </section>
     </div>
   );
 };
@@ -577,22 +897,16 @@ const ProjectDetail = () => {
       />
       <ProjectHeaderCard project={data} />
       <ProjectTabBar projectId={data.id} activeTab={tab} />
-      {tab === 'overview' ? (
-        <div className="grid grid-cols-3 gap-3">
-          <Metric label={t.tasks} value={data.tasks?.length ?? 0} />
-          <Metric label={t.links} value={data.links?.length ?? 0} />
-          <Metric label={t.subProjects} value={data.sub_projects?.length ?? 0} />
-          <section className="col-span-3 rounded-lg border border-border p-4">
-            <h2 className="mb-3 font-semibold text-heading">{t.subProjects}</h2>
-            <ProjectForm parentId={data.id} />
-            <div className="mt-3 flex flex-wrap gap-2">{data.sub_projects?.map((sub) => <Badge key={sub.id}>{sub.name}</Badge>)}</div>
-          </section>
-        </div>
-      ) : null}
+      {tab === 'overview' ? <ProjectOverview project={data} /> : null}
       {tab === 'tasks' ? <div className="space-y-2">{data.tasks?.map((task) => <TaskCard key={task.id} task={task} />)}</div> : null}
       {tab === 'kanban' ? <KanbanBoard projectId={data.id} /> : null}
       {tab === 'links' ? <ProjectLinks projectId={data.id} links={data.links ?? []} /> : null}
-      {tab === 'decisions' ? <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">{t.empty}</div> : null}
+      {tab === 'decisions' ? (
+        <EmptyStateCard
+          title={t.decisionsPlaceholderTitle}
+          body={t.decisionsPlaceholderBody}
+        />
+      ) : null}
     </div>
   );
 };
@@ -888,6 +1202,7 @@ const Metric = ({ label, value }: { label: string; value: number }) => (
 const ProjectLinks = ({ projectId, links }: { projectId: string; links: ProjectLink[] }) => {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [type, setType] = useState<LinkType>(LinkType.OTHER);
   const [showTrash, setShowTrash] = useState(false);
   const [notice, setNotice] = useState<ActionNotice | null>(null);
   const queryClient = useQueryClient();
@@ -897,10 +1212,11 @@ const ProjectLinks = ({ projectId, links }: { projectId: string; links: ProjectL
     queryFn: async () => (await api.get<ApiList<ProjectLink>>(`/projects/${projectId}/links?deleted=true`)).data.data,
   });
   const mutation = useMutation({
-    mutationFn: async () => api.post(`/projects/${projectId}/links`, { url_or_path: url, title }),
+    mutationFn: async () => api.post(`/projects/${projectId}/links`, { url_or_path: url, title, type }),
     onSuccess: async () => {
       setUrl('');
       setTitle('');
+      setType(LinkType.OTHER);
       await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
@@ -924,10 +1240,19 @@ const ProjectLinks = ({ projectId, links }: { projectId: string; links: ProjectL
     <section className="space-y-3">
       <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       {!showTrash ? (
-        <form onSubmit={(event) => { event.preventDefault(); if (url.trim()) mutation.mutate(); }} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-          <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.title} />
-          <Input value={url} onChange={(event) => setUrl(event.target.value)} placeholder={t.urlOrPath} />
-          <Button type="submit"><LinkIcon className="h-4 w-4" />{t.create}</Button>
+        <form onSubmit={(event) => { event.preventDefault(); if (url.trim()) mutation.mutate(); }} className="rounded-lg border border-border bg-background p-4">
+          <div className="mb-3">
+            <h2 className="text-sm font-semibold text-heading">{t.projectLinksPurpose}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t.projectLinksHelp}</p>
+          </div>
+          <div className="grid gap-2 lg:grid-cols-[1fr_1fr_150px_auto]">
+            <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t.title} />
+            <Input value={url} onChange={(event) => setUrl(event.target.value)} placeholder={t.urlOrPath} />
+            <Select value={type} onChange={(event) => setType(event.target.value as LinkType)}>
+              {Object.values(LinkType).map((value) => <option key={value} value={value}>{value}</option>)}
+            </Select>
+            <Button type="submit"><LinkIcon className="h-4 w-4" />{t.create}</Button>
+          </div>
         </form>
       ) : null}
       <div className="flex gap-2">
@@ -1054,6 +1379,15 @@ const Inbox = () => {
   return (
     <div className="space-y-4">
       <PageHeader title={t.inboxHistory} />
+      <section className="rounded-xl border border-border bg-background p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[18px] font-semibold text-heading">{t.inboxHistoryTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t.inboxHistoryRole}</p>
+          </div>
+          <Link to="/" className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white">{t.goDashboard}</Link>
+        </div>
+      </section>
       <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <form onSubmit={(event) => { event.preventDefault(); if (rawContent.trim()) createInbox.mutate(); }} className="grid grid-cols-[140px_1fr_180px_auto] gap-2">
         <Select value={sourceType} onChange={(event) => setSourceType(event.target.value as SourceType)}>
@@ -1153,6 +1487,7 @@ const Tasks = () => {
   return (
     <div className="space-y-4">
       <PageHeader title={t.tasks} />
+      <p className="rounded-lg border border-border bg-surface p-3 text-sm text-muted-foreground">{t.tasksRole}</p>
       <ActionNoticeBar notice={notice} onClear={() => setNotice(null)} />
       <TaskCreateForm />
       <div className="flex gap-2">
@@ -1326,6 +1661,16 @@ const KanbanBoard = ({ projectId, compact = false }: { projectId?: string; compa
   return (
     <section className="space-y-3">
       {!compact ? <PageHeader title={t.kanban} /> : null}
+      {!compact ? (
+        <section className="rounded-xl border border-border bg-background p-4">
+          <h2 className="text-[18px] font-semibold text-heading">{t.kanbanRoleTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t.kanbanRoleBody}</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full bg-surface px-3 py-1">{t.kanbanScopeAllHelp}</span>
+            <span className="rounded-full bg-surface px-3 py-1">{t.kanbanProjectHelp}</span>
+          </div>
+        </section>
+      ) : null}
       <DndContext onDragEnd={onDragEnd}>
         <div className="flex gap-3 overflow-x-auto px-4 pb-4">
           {visibleColumns.map((column) => <KanbanColumn key={column.status} column={column} compact={compact} />)}
@@ -1367,10 +1712,16 @@ const KanbanColumn = ({ column, compact = false }: { column: KanbanColumnData; c
   );
 };
 
-const Placeholder = ({ title }: { title: string }) => (
+const Placeholder = ({ title, body }: { title: string; body: string }) => (
   <div className="space-y-4">
     <PageHeader title={title} />
-    <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">{t.empty}</div>
+    <section className="rounded-xl border border-border bg-background p-6">
+      <h2 className="text-[18px] font-semibold text-heading">{title}</h2>
+      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{body}</p>
+      <div className="mt-4 rounded-lg bg-surface p-4 text-sm text-muted-foreground">
+        {t.notImplementedYet}
+      </div>
+    </section>
   </div>
 );
 
@@ -1568,8 +1919,8 @@ function App() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/tasks/:id" element={<TaskDetail />} />
             <Route path="/kanban" element={<KanbanBoard />} />
-            <Route path="/decisions" element={<Placeholder title={t.decisions} />} />
-            <Route path="/search" element={<Placeholder title={t.search} />} />
+            <Route path="/decisions" element={<Placeholder title={t.decisions} body={t.decisionsPageRole} />} />
+            <Route path="/search" element={<Placeholder title={t.search} body={t.searchPageRole} />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </Layout>
